@@ -25,8 +25,9 @@ class AlanNimeAPI {
             throw new Error('Rate limit exceeded. Please wait 1 minute.');
         }
 
-        try {
-            const response = await fetch(`${this.baseUrl}${endpoint}`);
+        try {const response = await fetch(
+  `/api/proxy?endpoint=${encodeURIComponent(endpoint)}`
+);
             this.rateLimit.requests++;
             
             if (!response.ok) {
