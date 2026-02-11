@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlanNime - Nonton Anime Subtitle Indonesia</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header & Navigation -->
+    <header class="header">
+        <nav class="navbar">
+            <div class="logo">
+                <h1>AlanNime</h1>
+                <p>Nonton Anime Sub Indo Gratis</p>
+            </div>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Cari anime...">
+                <button id="searchBtn"><i class="fas fa-search"></i></button>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="active"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="ongoing.html"><i class="fas fa-play-circle"></i> Ongoing</a></li>
+                <li><a href="completed.html"><i class="fas fa-check-circle"></i> Complete</a></li>
+                <li><a href="schedule.html"><i class="fas fa-calendar-alt"></i> Schedule</a></li>
+                <li><a href="genre.html"><i class="fas fa-tags"></i> Genre</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-content">
+                <h2>Selamat Datang di AlanNime</h2>
+                <p>Nonton anime subtitle Indonesia terlengkap dan terupdate</p>
+            </div>
+        </section>
+
+        <!-- Ongoing Anime Section -->
+        <section class="section">
+            <h2 class="section-title">Anime Sedang Tayang</h2>
+            <div id="ongoingContainer" class="anime-grid">
+                <!-- Data akan dimuat via JavaScript -->
+                <div class="loading">Memuat data...</div>
+            </div>
+            <div class="section-footer">
+                <a href="ongoing.html" class="view-all">Lihat Semua <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </section>
+
+        <!-- Completed Anime Section -->
+        <section class="section">
+            <h2 class="section-title">Anime Baru Selesai</h2>
+            <div id="completedContainer" class="anime-grid">
+                <!-- Data akan dimuat via JavaScript -->
+                <div class="loading">Memuat data...</div>
+            </div>
+            <div class="section-footer">
+                <a href="completed.html" class="view-all">Lihat Semua <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </section>
+
+        <!-- Schedule Preview -->
+        <section class="section">
+            <h2 class="section-title">Jadwal Rilis Minggu Ini</h2>
+            <div id="schedulePreview" class="schedule-preview">
+                <!-- Data akan dimuat via JavaScript -->
+                <div class="loading">Memuat jadwal...</div>
+            </div>
+            <div class="section-footer">
+                <a href="schedule.html" class="view-all">Lihat Jadwal Lengkap <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>AlanNime</h3>
+                <p>Situs streaming anime subtitle Indonesia gratis dan terlengkap.</p>
+                <p class="disclaimer">Disclaimer: Semua konten anime disediakan oleh Otakudesu melalui API Sanka Vollerei.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Kategori</h3>
+                <ul>
+                    <li><a href="ongoing.html">Anime Ongoing</a></li>
+                    <li><a href="completed.html">Anime Complete</a></li>
+                    <li><a href="genre.html">Daftar Genre</a></li>
+                    <li><a href="schedule.html">Jadwal Rilis</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>API Info</h3>
+                <p>Powered by: <a href="https://www.sankavollerei.com/anime/" target="_blank">Sanka Vollerei API</a></p>
+                <p>Source: Otakudesu</p>
+                <p>Rate Limit: 70 requests/min</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 AlanNime. All anime content belongs to their respective owners.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
