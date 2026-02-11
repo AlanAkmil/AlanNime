@@ -1,5 +1,5 @@
 // Konfigurasi API
-const API_BASE_URL = 'https://www.sankavollerei.com';
+const API_BASE_URL = '';
 const OTAKU_ENDPOINT = '/anime/otaku';
 
 class AlanNimeAPI {
