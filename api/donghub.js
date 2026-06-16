@@ -37,13 +37,52 @@ function cardEgg($, el) {
   };
 }
 
+const SYNHS = "https://api-synhs.my.id/api/donghub";
+
+function cleanTitle(t) {
+  return (t || "").replace(/at \d+:\d+\s*/gi, "").replace(/released\s*/gi, "")
+    .replace(/\t/g, "").replace(/\r\n/g, "").replace(/\s{2,}/g, " ").trim();
+}
+
+async function synhsGet(endpoint, params = {}) {
+  const qs = new URLSearchParams(params).toString();
+  const url = `${SYNHS}/${endpoint}${qs ? "?" + qs : ""}`;
+  const { data } = await axios.get(url, { headers: HEADERS, timeout: 12000 });
+  return data;
+}
+
 async function home(page = 1) {
+  try {
+    // Try Synhs API first
+    const synhs = await synhsGet("home", { page });
+    if (synhs?.status && synhs?.data) {
+      const d = synhs.data;
+      const popular = (d.popular_series || []).map(i => ({
+        title: i.title, url: i.url, thumbnail: i.thumbnail
+      }));
+      const latest = (d.latest_episodes || []).map(i => ({
+        title: i.title, episode: i.episode, url: i.url, thumbnail: i.thumbnail
+      }));
+
+      // If latest empty, fallback to scraper for latest
+      if (!latest.length) {
+        const $ = await get(page <= 1 ? BASE : `${BASE}/page/${page}/`);
+        const scraped = [];
+        $(".listupd.normal .styleegg").each((_, el) => scraped.push(cardEgg($, el)));
+        return wrap({ page, total_pages: 1, latest_episodes: scraped.slice(0, 24), popular_series: popular.slice(0, 10) });
+      }
+
+      return wrap({ page, total_pages: 1, latest_episodes: latest.slice(0, 24), popular_series: popular.slice(0, 10) });
+    }
+  } catch {}
+
+  // Full fallback to scraper
   const $ = await get(page <= 1 ? BASE : `${BASE}/page/${page}/`);
   const latest = [];
   $(".listupd.normal .styleegg").each((_, el) => latest.push(cardEgg($, el)));
   const popular = [];
   $(".serieslist.pop ul li").each((_, el) => {
-    const a   = $(el).find(".leftseries h4 a");
+    const a = $(el).find(".leftseries h4 a");
     const img = $(el).find(".imgseries img");
     if (a.length) popular.push({ title: a.text().trim(), url: a.attr("href"), thumbnail: img.attr("src") || null });
   });
@@ -137,7 +176,10 @@ async function detail(slug) {
     episodes = episodes.concat(generated).sort((a, b) => parseInt(b.episode) - parseInt(a.episode));
   }
 
-  return wrap({ title, status, total_episodes: totalEp, rating, genres, synopsis, poster, result: episodes });
+  return wrap({
+    title, status, total_episodes: totalEp, rating, genres, synopsis, poster, result: episodes,
+    not_series: (episodes.length === 0 && (!totalEp || totalNum === 0)),
+  });
 }
 
 async function watch(slug) {
