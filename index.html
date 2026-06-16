@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
-<title>Hidaka Donghua</title>
+<title>ClaudeNime — Streaming Donghua</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 :root{
-  --bg:#0f0817;--surface:#180f29;--card:#1f1433;--card2:#28193f;
+  --bg:#0f0817;--surface:rgba(24,15,41,0.7);--card:rgba(31,20,51,0.75);--card2:rgba(40,25,63,0.8);
   --border:#322248;--border2:#3d2a5a;
   --purple:#a25bff;--purple2:#c389ff;--purple-dim:#5a3d80;--purple-bg:#2a1a45;
   --text:#f0eaf8;--text2:#b8a8d0;--muted:#7a6a94;
@@ -17,6 +17,8 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;overflow-x:hidden}
+#galaxy-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+#app-wrap{position:relative;z-index:1}
 ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--purple-dim);border-radius:2px}
 
 /* ── TOPNAV ── */
@@ -103,6 +105,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .cw-scroll::-webkit-scrollbar{display:none}
 .cw-card{flex:0 0 165px;border-radius:var(--radius);overflow:hidden;background:var(--card);
   border:1px solid var(--border);cursor:pointer;position:relative;scroll-snap-align:start;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   transition:transform .25s var(--transition),border-color .25s}
 .cw-card:active{transform:scale(.96);border-color:var(--purple-dim)}
 .cw-thumb{width:100%;height:92px;object-fit:cover;display:block;background:var(--border)}
@@ -160,6 +163,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .pop-list{display:flex;flex-direction:column;gap:10px;padding:0 18px}
 .pop-item{display:flex;gap:14px;align-items:center;padding:12px;background:var(--card);
   border-radius:var(--radius);border:1px solid var(--border);cursor:pointer;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   transition:all .25s var(--transition)}
 .pop-item:active{border-color:var(--purple-dim);transform:scale(.98);background:var(--card2)}
 .pop-rank{font-family:'Poppins',sans-serif;font-size:22px;font-weight:800;
@@ -251,6 +255,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .ep-list{display:flex;flex-direction:column;gap:8px}
 .ep-row{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;
   background:var(--card);border-radius:var(--radius-sm);border:1px solid var(--border);cursor:pointer;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   transition:all .25s var(--transition)}
 .ep-row:active{border-color:var(--purple-dim);transform:scale(.98);background:var(--card2)}
 .ep-row-num{font-size:13.5px;font-weight:700;color:var(--purple2);min-width:58px}
@@ -315,9 +320,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 </head>
 <body>
 
+<canvas id="galaxy-canvas"></canvas>
+<div id="app-wrap">
 <nav id="topnav">
   <div>
-    <div class="logo">HIDAKA</div>
+    <div class="logo">ClaudeNime</div>
     <span class="logo-sub">DONGHUA STREAMING</span>
   </div>
   <div style="display:flex;gap:10px">
@@ -443,11 +450,130 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
     <button class="ep-nav-btn" id="btn-prev-ep" onclick="navEp('prev')" disabled>‹ Ep Sebelumnya</button>
     <button class="ep-nav-btn" id="btn-next-ep" onclick="navEp('next')" disabled>Ep Selanjutnya ›</button>
   </div>
-</div>
+</div><!-- /#app-wrap -->
 
 <div id="toast"></div>
 
 <script>
+// ── GALAXY BACKGROUND ──────────────────────────────────────────────────────
+(function(){
+  const C=document.getElementById('galaxy-canvas');
+  const ctx=C.getContext('2d');
+  let W,H,cx,cy,scrollY=0,targetScrollY=0,mouseX=0,mouseY=0;
+
+  function resize(){W=C.width=window.innerWidth;H=C.height=window.innerHeight;cx=W/2;cy=H/2}
+  resize();
+  window.addEventListener('resize',resize);
+  window.addEventListener('scroll',()=>{targetScrollY=window.pageYOffset},{passive:true});
+  document.addEventListener('mousemove',e=>{mouseX=(e.clientX/W-0.5)*2;mouseY=(e.clientY/H-0.5)*2});
+
+  // Purple-themed color palette
+  function getPurpleColor(t,b){
+    let r,g,bl;
+    if(t>0.85){r=200*b;g=150*b;bl=255*b}
+    else if(t>0.65){r=162*b;g=91*b;bl=255*b}
+    else if(t>0.45){r=120*b;g=50*b;bl=220*b}
+    else if(t>0.25){r=80*b;g=30*b;bl=180*b}
+    else{r=50*b;g=20*b;bl=120*b}
+    return{r:Math.floor(Math.min(255,r)),g:Math.floor(Math.min(255,g)),b:Math.floor(Math.min(255,bl))}
+  }
+
+  const RING_COUNT=5,PPR=220,JET=50,particles=[];
+
+  // Accretion disk rings
+  for(let ring=0;ring<RING_COUNT;ring++){
+    const bR=50+ring*40,th=10+ring*5,sp=(0.003+Math.random()*0.002)/(1+ring*0.4);
+    for(let i=0;i<PPR;i++){
+      const a=(i/PPR)*Math.PI*2+Math.random()*0.3,r=bR+(Math.random()-0.5)*th,yO=(Math.random()-0.5)*(3+ring*1.5);
+      particles.push({ring,angle:a,r,yOff:yO,size:0.4+Math.random()*(1.1-ring*0.1),speed:sp,temp:1-ring/RING_COUNT,brightness:0.4+Math.random()*0.6,type:'disk'})
+    }
+  }
+
+  // Polar jets
+  for(let i=0;i<JET;i++){
+    const dir=i<JET/2?-1:1,dist=15+Math.random()*160,spread=(Math.random()-0.5)*18*(dist/180);
+    particles.push({dir,dist,spread,angle:Math.random()*Math.PI*2,rotSpeed:0.01+Math.random()*0.02,size:0.4+Math.random()*0.9,brightness:0.3+Math.random()*0.5,type:'jet'})
+  }
+
+  // Halo stars (purple tinted)
+  for(let i=0;i<300;i++){
+    const a=Math.random()*Math.PI*2,r=80+Math.random()*400;
+    particles.push({angle:a,r,yOff:(Math.random()-0.5)*220,size:0.2+Math.random()*0.7,speed:0.0004+Math.random()*0.0008,brightness:0.08+Math.random()*0.2,type:'halo'})
+  }
+
+  // Distant stars background
+  const stars=[];
+  for(let i=0;i<150;i++) stars.push({x:Math.random(),y:Math.random(),s:Math.random()*1.2,o:Math.random()*0.3+0.05});
+
+  function rY(x,y,z,a){const c=Math.cos(a),s=Math.sin(a);return{x:x*c-z*s,y,z:x*s+z*c}}
+  function rX(x,y,z,a){const c=Math.cos(a),s=Math.sin(a);return{x,y:y*c-z*s,z:y*s+z*c}}
+
+  function drawCore(){
+    // Event horizon glow (purple)
+    const g1=ctx.createRadialGradient(cx,cy,0,cx,cy,110);
+    g1.addColorStop(0,'rgba(0,0,0,1)');
+    g1.addColorStop(0.12,'rgba(0,0,0,0.95)');
+    g1.addColorStop(0.25,'rgba(90,30,150,0.08)');
+    g1.addColorStop(0.45,'rgba(162,91,255,0.04)');
+    g1.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.beginPath();ctx.arc(cx,cy,110,0,Math.PI*2);ctx.fillStyle=g1;ctx.fill();
+    // Black core
+    ctx.beginPath();ctx.arc(cx,cy,20,0,Math.PI*2);ctx.fillStyle='#000';ctx.fill();
+    // Event horizon ring
+    ctx.beginPath();ctx.arc(cx,cy,24,0,Math.PI*2);ctx.strokeStyle='rgba(162,91,255,0.25)';ctx.lineWidth=1.5;ctx.stroke();
+    ctx.beginPath();ctx.arc(cx,cy,28,0,Math.PI*2);ctx.strokeStyle='rgba(195,137,255,0.1)';ctx.lineWidth=2;ctx.stroke();
+  }
+
+  function animate(){
+    scrollY+=(targetScrollY-scrollY)*0.05;
+    ctx.clearRect(0,0,W,H);
+
+    // Draw background stars
+    for(const s of stars){ctx.beginPath();ctx.arc(s.x*W,s.y*H,s.s,0,Math.PI*2);ctx.fillStyle=`rgba(180,160,255,${s.o})`;ctx.fill()}
+
+    const sa=scrollY*0.0006,ax=0.82+mouseY*0.04+Math.sin(sa*0.4)*0.12,ay=sa+mouseX*0.06,ps=780;
+    const pj=[];
+
+    for(const p of particles){
+      let x3,y3,z3,col,al;
+      if(p.type==='disk'){
+        p.angle+=p.speed;
+        x3=Math.cos(p.angle)*p.r;z3=Math.sin(p.angle)*p.r;y3=p.yOff;
+        col=getPurpleColor(p.temp,p.brightness);al=p.brightness*0.7
+      } else if(p.type==='jet'){
+        p.angle+=p.rotSpeed;
+        x3=Math.cos(p.angle)*p.spread;z3=Math.sin(p.angle)*p.spread;y3=p.dir*p.dist;
+        col={r:Math.floor(162*p.brightness),g:Math.floor(91*p.brightness),b:255};al=p.brightness*0.45*(1-p.dist/180)
+      } else {
+        p.angle+=p.speed;
+        x3=Math.cos(p.angle)*p.r;z3=Math.sin(p.angle)*p.r;y3=p.yOff;
+        col={r:100,g:60,b:180};al=p.brightness*0.25
+      }
+      let r1=rY(x3,y3,z3,ay),r2=rX(r1.x,r1.y,r1.z,ax);
+      const sc=ps/(ps+r2.z);
+      pj.push({sx:cx+r2.x*sc,sy:cy+r2.y*sc,sz:r2.z,ss:Math.max(0.2,p.size*sc),col,al:al*Math.max(0.1,sc)})
+    }
+
+    pj.sort((a,b)=>b.sz-a.sz);
+
+    for(const p of pj) if(p.sz>0) drP(p);
+    drawCore();
+    for(const p of pj) if(p.sz<=0) drP(p);
+
+    requestAnimationFrame(animate)
+  }
+
+  function drP(p){
+    const{sx,sy,ss,col,al}=p;
+    if(sx<-60||sx>W+60||sy<-60||sy>H+60) return;
+    ctx.beginPath();ctx.arc(sx,sy,ss,0,Math.PI*2);
+    ctx.fillStyle=`rgba(${col.r},${col.g},${col.b},${al})`;ctx.fill();
+    if(ss>0.9&&al>0.2){ctx.beginPath();ctx.arc(sx,sy,ss*3,0,Math.PI*2);ctx.fillStyle=`rgba(${col.r},${col.g},${col.b},${al*0.07})`;ctx.fill()}
+  }
+
+  animate();
+})();
+// ───────────────────────────────────────────────────────────────────────────
 const DH_API = "/api/donghub";
 const IMG = u => u ? `/api/img?url=${encodeURIComponent(u)}` : "";
 const HIST_KEY = "hp_history";
@@ -676,7 +802,9 @@ async function openDetail(encodedSlug){
           </div>
         </div>
         ${d.synopsis?`<div class="dp-synopsis">${d.synopsis}</div>`:""}
-        <div class="ep-list-hd">Daftar Episode <span>(${eps.length})</span></div>
+        ${d.not_series
+          ? `<div class="empty"><div class="empty-ico">📄</div>Konten ini bukan series donghua dan tidak memiliki episode.</div>`
+          : `<div class="ep-list-hd">Daftar Episode <span>(${eps.length})</span></div>
         <div class="ep-list">
           ${eps.map(e=>`
             <div class="ep-row" onclick="openWatch('${encodeURIComponent(slug(e.url))}','${encodeURIComponent(d.title)}','${encodeURIComponent(d.poster||"")}')">
@@ -685,7 +813,7 @@ async function openDetail(encodedSlug){
               <span class="ep-row-date">${e.release_date||""}</span>
               <span class="ep-row-arr">›</span>
             </div>`).join("")}
-        </div>
+        </div>`}
       </div>`;
   }catch{body.innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div>Gagal memuat detail</div>`;}
 }
