@@ -152,10 +152,6 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
   padding:13px 20px;color:#fff;font-weight:700;font-size:13px;cursor:pointer;
   box-shadow:0 4px 16px rgba(162,91,255,.35);transition:transform .2s}
 .s-btn:active{transform:scale(.95)}
-.sm-tabs{display:flex;gap:8px;padding:10px 18px 0}
-.sm-tab{padding:7px 16px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;
-  border:1px solid var(--border);background:var(--card);color:var(--muted);transition:all .25s var(--ease)}
-.sm-tab.active{background:linear-gradient(135deg,var(--purple),#8a3ffc);color:#fff;border-color:transparent}
 
 /* ── SCHEDULE ── */
 .day-tabs-wrap{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:0 18px 14px}
@@ -164,6 +160,19 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
   cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--muted);transition:all .25s var(--ease)}
 .day-tab.active{background:linear-gradient(135deg,var(--purple),#8a3ffc);color:#fff;
   border-color:transparent;box-shadow:0 4px 16px rgba(162,91,255,.35)}
+
+/* Schedule item list */
+.sch-list{display:flex;flex-direction:column;gap:8px;padding:0 18px 10px}
+.sch-item{display:flex;align-items:center;gap:12px;padding:11px 14px;
+  background:var(--card);border-radius:var(--radius-sm);border:1px solid var(--border);
+  cursor:pointer;backdrop-filter:blur(8px);transition:all .25s var(--ease)}
+.sch-item:active{border-color:var(--purple-dim);transform:scale(.98)}
+.sch-badge{font-size:9px;font-weight:700;padding:3px 8px;border-radius:8px;flex-shrink:0}
+.sch-badge.dh{background:rgba(162,91,255,.2);color:var(--purple2);border:1px solid var(--purple-dim)}
+.sch-badge.an{background:rgba(255,107,107,.15);color:#ff8e8e;border:1px solid rgba(255,107,107,.3)}
+.sch-title{font-size:13px;font-weight:600;color:var(--text);flex:1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sch-arr{color:var(--muted);font-size:16px}
 
 /* ── PAGINATION ── */
 .pagination{display:flex;justify-content:center;gap:12px;padding:20px 18px}
@@ -276,45 +285,30 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 
 <!-- ══ BERANDA ══ -->
 <section id="sec-home" class="section active">
-  <!-- Hero -->
   <div class="hero-wrap" id="hero-wrap">
     <div class="hero-track" id="hero-track"></div>
     <div class="hero-dots" id="hero-dots"></div>
   </div>
-
-  <!-- Lanjutkan Nonton -->
   <div id="cw-section" style="display:none">
     <div class="sh"><span class="sh-title"><span class="dot"></span>Lanjutkan Nonton</span><button class="sh-more" onclick="clearHistory()">Hapus</button></div>
     <div class="cw-scroll" id="cw-list"></div>
     <div class="gline"></div>
   </div>
-
-  <!-- Donghua Terbaru -->
   <div class="sh"><span class="sh-title"><span class="dot"></span>Donghua Terbaru</span><button class="sh-more" onclick="showSection('donghua')">Lihat Semua ›</button></div>
   <div class="grid3" id="home-donghua"><div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div></div>
-
   <div class="gline" style="margin-top:14px"></div>
-
-  <!-- Anime Terbaru -->
   <div class="sh"><span class="sh-title"><span class="dot"></span>Anime Terbaru</span><button class="sh-more" onclick="showSection('anime')">Lihat Semua ›</button></div>
   <div class="grid3" id="home-anime"><div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div></div>
-
   <div class="gline" style="margin-top:14px"></div>
-
-  <!-- Populer -->
   <div class="sh"><span class="sh-title"><span class="dot"></span>Donghua Populer</span></div>
   <div class="pop-list" id="home-popular"><div class="loader"><div class="spinner"></div></div></div>
-
   <div class="gline" style="margin-top:14px"></div>
-
-  <!-- Pendatang Baru -->
   <div class="sh"><span class="sh-title"><span class="dot"></span>Series Baru</span><button class="sh-more" onclick="showSection('donghua')">Lihat Semua ›</button></div>
   <div class="grid3" id="home-new" style="padding-bottom:10px"><div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div></div>
 </section>
 
 <!-- ══ DONGHUA ══ -->
 <section id="sec-donghua" class="section">
-  <!-- Hero Donghua -->
   <div class="hero-wrap" id="dh-hero-wrap">
     <div class="hero-track" id="dh-hero-track"></div>
     <div class="hero-dots" id="dh-hero-dots"></div>
@@ -336,7 +330,6 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 
 <!-- ══ ANIME ══ -->
 <section id="sec-anime" class="section">
-  <!-- Hero Anime -->
   <div class="hero-wrap" id="an-hero-wrap">
     <div class="hero-track" id="an-hero-track"></div>
     <div class="hero-dots" id="an-hero-dots"></div>
@@ -356,27 +349,23 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
   </div>
 </section>
 
-<!-- ══ CARI ══ -->
+<!-- ══ CARI (unified) ══ -->
 <section id="sec-search" class="section">
   <div class="s-bar">
     <input class="s-input" id="s-input" type="text" placeholder="Cari donghua atau anime..."/>
     <button class="s-btn" onclick="doSearch()">Cari</button>
-  </div>
-  <div class="sm-tabs">
-    <button class="sm-tab active" id="smode-dh" onclick="setSearchMode('donghua')">Donghua</button>
-    <button class="sm-tab" id="smode-an" onclick="setSearchMode('anime')">Anime</button>
   </div>
   <div id="search-results" style="padding-top:14px">
     <div class="empty"><div class="empty-ico">🔍</div>Ketik lalu tekan Cari</div>
   </div>
 </section>
 
-<!-- ══ JADWAL ══ -->
+<!-- ══ JADWAL (Donghua + Anime gabung) ══ -->
 <section id="sec-schedule" class="section">
   <div class="sh"><span class="sh-title"><span class="dot"></span>Jadwal Tayang</span></div>
   <div class="day-tabs-wrap" id="day-tabs"></div>
-  <div class="grid3" id="sch-grid" style="padding-bottom:10px">
-    <div class="loader" style="grid-column:1/-1"><div class="spinner"></div><div class="ldr-txt">Memuat jadwal...</div></div>
+  <div id="sch-content">
+    <div class="loader"><div class="spinner"></div><div class="ldr-txt">Memuat jadwal...</div></div>
   </div>
 </section>
 
@@ -449,13 +438,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
   window.addEventListener('scroll',()=>{targetScrollY=window.pageYOffset},{passive:true});
   document.addEventListener('mousemove',e=>{mouseX=(e.clientX/W-.5)*2;mouseY=(e.clientY/H-.5)*2});
   function getColor(t,b){let r,g,bl;
-    if(t>.85){r=200*b;g=150*b;bl=255*b}
-    else if(t>.65){r=162*b;g=91*b;bl=255*b}
-    else if(t>.45){r=120*b;g=50*b;bl=220*b}
-    else if(t>.25){r=80*b;g=30*b;bl=180*b}
+    if(t>.85){r=200*b;g=150*b;bl=255*b}else if(t>.65){r=162*b;g=91*b;bl=255*b}
+    else if(t>.45){r=120*b;g=50*b;bl=220*b}else if(t>.25){r=80*b;g=30*b;bl=180*b}
     else{r=50*b;g=20*b;bl=120*b}
-    return{r:Math.floor(Math.min(255,r)),g:Math.floor(Math.min(255,g)),b:Math.floor(Math.min(255,bl))}
-  }
+    return{r:Math.floor(Math.min(255,r)),g:Math.floor(Math.min(255,g)),b:Math.floor(Math.min(255,bl))}}
   const particles=[];
   for(let ring=0;ring<5;ring++){const bR=50+ring*40,sp=(0.003+Math.random()*.002)/(1+ring*.4);
     for(let i=0;i<220;i++){const a=(i/220)*Math.PI*2+Math.random()*.3,r=bR+(Math.random()-.5)*(10+ring*5),yO=(Math.random()-.5)*(3+ring*1.5);
@@ -473,8 +459,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
     g.addColorStop(.25,'rgba(90,30,150,.08)');g.addColorStop(.45,'rgba(162,91,255,.04)');g.addColorStop(1,'rgba(0,0,0,0)');
     ctx.beginPath();ctx.arc(cx,cy,110,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
     ctx.beginPath();ctx.arc(cx,cy,20,0,Math.PI*2);ctx.fillStyle='#000';ctx.fill();
-    ctx.beginPath();ctx.arc(cx,cy,24,0,Math.PI*2);ctx.strokeStyle='rgba(162,91,255,.25)';ctx.lineWidth=1.5;ctx.stroke();
-  }
+    ctx.beginPath();ctx.arc(cx,cy,24,0,Math.PI*2);ctx.strokeStyle='rgba(162,91,255,.25)';ctx.lineWidth=1.5;ctx.stroke()}
   function animate(){
     scrollY+=(targetScrollY-scrollY)*.05;ctx.clearRect(0,0,W,H);
     for(const s of stars){ctx.beginPath();ctx.arc(s.x*W,s.y*H,s.s,0,Math.PI*2);ctx.fillStyle=`rgba(180,160,255,${s.o})`;ctx.fill()}
@@ -487,8 +472,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
       pj.push({sx:cx+r2.x*sc,sy:cy+r2.y*sc,sz:r2.z,ss:Math.max(.2,p.size*sc),col,al:al*Math.max(.1,sc)})}
     pj.sort((a,b)=>b.sz-a.sz);
     for(const p of pj)if(p.sz>0)drP(p);drawCore();for(const p of pj)if(p.sz<=0)drP(p);
-    requestAnimationFrame(animate)
-  }
+    requestAnimationFrame(animate)}
   function drP(p){const{sx,sy,ss,col,al}=p;if(sx<-60||sx>W+60||sy<-60||sy>H+60)return;
     ctx.beginPath();ctx.arc(sx,sy,ss,0,Math.PI*2);ctx.fillStyle=`rgba(${col.r},${col.g},${col.b},${al})`;ctx.fill();
     if(ss>.9&&al>.2){ctx.beginPath();ctx.arc(sx,sy,ss*3,0,Math.PI*2);ctx.fillStyle=`rgba(${col.r},${col.g},${col.b},${al*.07})`;ctx.fill()}}
@@ -496,37 +480,46 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 })();
 
 // ── CORE ──────────────────────────────────────────────────────────────────
-const DH_API="/api/donghub", GM_API="/api/gomunime";
-const IMG=u=>u?`/api/img?url=${encodeURIComponent(u)}`:"";
-const HIST_KEY="cn_history";
+const DH_API  = "/api/donghub";
+const AN_API  = "/api/otakudesu";  // ganti dari gomunime
+const IMG = u => u ? `/api/img?url=${encodeURIComponent(u)}` : "";
+const HIST_KEY = "cn_history";
 
-let scheduleLoaded=false,scheduleData={},currentDay="";
-let dhMode="new",dhPage=1,dhLoaded=false;
-let anMode="ongoing",anPage=1,anLoaded=false;
-let searchMode="donghua",watchData=null;
-let heroTimer=null,heroIdx=0,heroItems=[];
-let dhHeroTimer=null,dhHeroIdx=0,dhHeroItems=[];
-let anHeroTimer=null,anHeroIdx=0,anHeroItems=[];
+let scheduleLoaded=false, scheduleData={}, currentDay="";
+let dhMode="new", dhPage=1, dhLoaded=false;
+let anMode="ongoing", anPage=1, anLoaded=false;
+let watchData=null;
+let heroTimer=null, dhHeroTimer=null, anHeroTimer=null;
 
-async function apiGet(base,p){const r=await fetch(`${base}?${new URLSearchParams(p)}`);if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}
-function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2200)}
-function slug(url){return url?url.replace(/^https?:\/\/[^/]+\//,"").replace(/\/$/,""):""}
+async function apiGet(base, p) {
+  const r = await fetch(`${base}?${new URLSearchParams(p)}`);
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+function toast(m) {
+  const t = document.getElementById("toast");
+  t.textContent = m; t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2200);
+}
+function slug(url) { return url ? url.replace(/^https?:\/\/[^/]+\//, "").replace(/\/$/, "") : ""; }
 
 // ── HISTORY ──
-function getHist(){try{return JSON.parse(localStorage.getItem(HIST_KEY)||"[]")}catch{return[]}}
-function saveHist(h){localStorage.setItem(HIST_KEY,JSON.stringify(h))}
-function addHist(slugVal,epTitle,seriesTitle,thumb,type){
-  let h=getHist().filter(x=>x.slug!==slugVal);
-  h.unshift({slug:slugVal,epTitle,seriesTitle,thumb,type:type||"donghua",ts:Date.now()});
-  saveHist(h.slice(0,12));
+function getHist() { try { return JSON.parse(localStorage.getItem(HIST_KEY)||"[]") } catch { return [] } }
+function saveHist(h) { localStorage.setItem(HIST_KEY, JSON.stringify(h)); }
+function addHist(slugVal, epTitle, seriesTitle, thumb, type) {
+  let h = getHist().filter(x => x.slug !== slugVal);
+  h.unshift({ slug:slugVal, epTitle, seriesTitle, thumb, type:type||"donghua", ts:Date.now() });
+  saveHist(h.slice(0, 12));
 }
-function clearHistory(){saveHist([]);renderCW()}
-function renderCW(){
-  const h=getHist(),sec=document.getElementById("cw-section"),list=document.getElementById("cw-list");
-  if(!h.length){sec.style.display="none";return}
-  sec.style.display="block";
-  list.innerHTML=h.map(i=>`
-    <div class="cw-card" onclick="${i.type==='anime'?`openAnimeWatch('${encodeURIComponent(i.slug)}','${encodeURIComponent(i.seriesTitle||"")}')`:`openWatch('${encodeURIComponent(i.slug)}')`}">
+function clearHistory() { saveHist([]); renderCW(); }
+function renderCW() {
+  const h = getHist(), sec = document.getElementById("cw-section"), list = document.getElementById("cw-list");
+  if (!h.length) { sec.style.display = "none"; return; }
+  sec.style.display = "block";
+  list.innerHTML = h.map(i => `
+    <div class="cw-card" onclick="${i.type==='anime'
+      ? `openAnimeWatch('${encodeURIComponent(i.slug)}','${encodeURIComponent(i.seriesTitle||"")}')`
+      : `openWatch('${encodeURIComponent(i.slug)}')`}">
       <img class="cw-thumb" src="${IMG(i.thumb)}" onerror="this.style.background='var(--card2)'" loading="lazy"/>
       <div class="cw-bar"><div class="cw-prog"></div></div>
       <div class="cw-info"><div class="cw-ep">${i.epTitle||""}</div><div class="cw-title">${i.seriesTitle||""}</div></div>
@@ -534,89 +527,60 @@ function renderCW(){
 }
 
 // ── HERO ──
-function buildHero(trackId,dotsId,items,timerRef,clickFn,badgeLabel){
-  const track=document.getElementById(trackId),dots=document.getElementById(dotsId);
-  if(!track||!dots)return null;
-  track.innerHTML=items.map(i=>`
+function buildHero(trackId, dotsId, items, clickFn, label) {
+  const track = document.getElementById(trackId), dots = document.getElementById(dotsId);
+  if (!track || !dots) return null;
+  track.innerHTML = items.map(i => `
     <div class="hero-slide">
       <img class="hero-img" src="${IMG(i.thumbnail||i.poster||i.image)}" onerror="this.style.background='var(--surface)'" loading="lazy"/>
       <div class="hero-overlay">
-        <div class="hero-badge">✦ ${badgeLabel||"Populer"}</div>
+        <div class="hero-badge">✦ ${label||"Populer"}</div>
         <div class="hero-title">${i.title}</div>
-        <div class="hero-meta"><span class="hero-type">${badgeLabel||"DONGHUA"}</span><span style="color:var(--muted)">•</span><span>${i.status||"Ongoing"}</span></div>
+        <div class="hero-meta"><span class="hero-type">${label||"DONGHUA"}</span><span style="color:var(--muted)">•</span><span>${i.status||"Ongoing"}</span></div>
       </div>
     </div>`).join("");
-  dots.innerHTML=items.map((_,i)=>`<div class="hero-dot ${i===0?'active':''}" onclick="goHeroTo('${trackId}','${dotsId}',${i})"></div>`).join("");
-  track.querySelectorAll(".hero-slide").forEach((s,i)=>s.onclick=()=>clickFn(items[i]));
-  return setInterval(()=>{
-    const idx=((parseInt(track.dataset.idx||0)+1)%items.length);
-    track.dataset.idx=idx;goHeroTo(trackId,dotsId,idx);
-  },4500);
+  dots.innerHTML = items.map((_,i) => `<div class="hero-dot ${i===0?'active':''}" onclick="goHeroTo('${trackId}','${dotsId}',${i})"></div>`).join("");
+  track.querySelectorAll(".hero-slide").forEach((s,i) => s.onclick = () => clickFn(items[i]));
+  return setInterval(() => {
+    const idx = ((parseInt(track.dataset.idx||0)+1) % items.length);
+    track.dataset.idx = idx; goHeroTo(trackId, dotsId, idx);
+  }, 4500);
 }
-function goHeroTo(trackId,dotsId,i){
-  const track=document.getElementById(trackId);if(!track)return;
-  track.style.transform=`translateX(-${i*100}%)`;track.dataset.idx=i;
-  document.querySelectorAll(`#${dotsId} .hero-dot`).forEach((d,idx)=>d.classList.toggle("active",idx===i));
+function goHeroTo(trackId, dotsId, i) {
+  const track = document.getElementById(trackId); if (!track) return;
+  track.style.transform = `translateX(-${i*100}%)`; track.dataset.idx = i;
+  document.querySelectorAll(`#${dotsId} .hero-dot`).forEach((d,idx) => d.classList.toggle("active", idx===i));
 }
 
 // ── SECTION NAV ──
-function showSection(name){
-  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
-  document.querySelectorAll(".bnav").forEach(b=>b.classList.remove("active"));
+function showSection(name) {
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll(".bnav").forEach(b => b.classList.remove("active"));
   document.getElementById("sec-"+name).classList.add("active");
-  const bn=document.getElementById("bn-"+name);if(bn)bn.classList.add("active");
-  if(name==="schedule"&&!scheduleLoaded)loadSchedule();
-  if(name==="donghua"&&!dhLoaded){dhLoaded=true;loadDonghuaSection()}
-  if(name==="anime"&&!anLoaded){anLoaded=true;loadAnimeSection()}
-  if(name==="home")renderCW();
-  window.scrollTo({top:0,behavior:"smooth"});
+  const bn = document.getElementById("bn-"+name); if (bn) bn.classList.add("active");
+  if (name==="schedule" && !scheduleLoaded) loadSchedule();
+  if (name==="donghua" && !dhLoaded) { dhLoaded=true; loadDonghuaSection(); }
+  if (name==="anime" && !anLoaded) { anLoaded=true; loadAnimeSection(); }
+  if (name==="home") renderCW();
+  window.scrollTo({ top:0, behavior:"smooth" });
 }
-function goSearch(){showSection("search");setTimeout(()=>document.getElementById("s-input").focus(),150)}
-
-// ── HOME ──
-async function loadHome(){
-  try{
-    const [homeData,newData,animeData]=await Promise.all([
-      apiGet(DH_API,{cmd:"home"}),
-      apiGet(DH_API,{cmd:"new-series",page:1}),
-      apiGet(GM_API,{cmd:"home"})
-    ]);
-    const pop=homeData.popular_series||[];
-    if(pop.length){
-      heroTimer=buildHero("hero-track","hero-dots",pop.slice(0,8),heroTimer,
-        i=>openDetail(encodeURIComponent(slug(i.url))),"DONGHUA");
-    }
-    // Donghua terbaru - grid 3 col, 9 items
-    const latest=homeData.latest_episodes||[];
-    renderGrid3(document.getElementById("home-donghua"),latest.slice(0,9),"dh");
-    // Anime terbaru - grid 3 col, 9 items
-    const animeItems=(animeData.data||[]).slice(0,9);
-    renderGrid3(document.getElementById("home-anime"),animeItems,"anime");
-    // Populer
-    renderPopular(pop);
-    // Series baru
-    const newItems=(newData.result||[]).slice(0,9);
-    renderGrid3(document.getElementById("home-new"),newItems,"dh");
-  }catch(e){
-    document.getElementById("home-donghua").innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal memuat</div>`;
-  }
-  renderCW();
-}
+function goSearch() { showSection("search"); setTimeout(() => document.getElementById("s-input").focus(), 150); }
 
 // ── RENDER HELPERS ──
-function renderGrid3(el,items,type){
-  if(!items||!items.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada data</div>`;return}
-  el.innerHTML=items.map(i=>gcHTML(i,type)).join("");
+function renderGrid3(el, items, type) {
+  if (!items||!items.length) { el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada data</div>`; return; }
+  el.innerHTML = items.map(i => gcHTML(i, type)).join("");
 }
 
-function gcHTML(i,type){
-  const isDH=type==="dh"||type==="donghua";
-  const clickFn=isDH
-    ?`openDetail('${encodeURIComponent(slug(i.url||i.link||""))}')`
-    :`openAnimeDetail('${encodeURIComponent(slug(i.link||i.url||""))}')`;
-  const thumb=i.thumbnail||i.poster||i.image||"";
-  const ep=i.episode||i.status||"";
-  const rating=i.rating||(i.score?`★ ${i.score}`:"");
+function gcHTML(i, type) {
+  const isDH = type==="dh"||type==="donghua";
+  const linkSlug = slug(i.url||i.link||"");
+  const clickFn = isDH
+    ? `openDetail('${encodeURIComponent(linkSlug)}')`
+    : `openAnimeDetail('${encodeURIComponent(linkSlug)}')`;
+  const thumb = i.thumbnail||i.poster||i.image||"";
+  const ep = i.episode||i.eps||i.status||"";
+  const rating = i.rating||(i.score?`★ ${i.score}`:"");
   return `<div class="gc" onclick="${clickFn}">
     <div class="gc-wrap">
       <img class="gc-img" src="${IMG(thumb)}" onerror="this.style.background='var(--card2)'" loading="lazy"/>
@@ -628,10 +592,10 @@ function gcHTML(i,type){
   </div>`;
 }
 
-function renderPopular(items){
-  const el=document.getElementById("home-popular");
-  if(!items||!items.length){el.innerHTML="";return}
-  el.innerHTML=items.map((i,idx)=>`
+function renderPopular(items) {
+  const el = document.getElementById("home-popular");
+  if (!items||!items.length) { el.innerHTML=""; return; }
+  el.innerHTML = items.map((i,idx) => `
     <div class="pop-item" onclick="openDetail('${encodeURIComponent(slug(i.url))}')">
       <span class="pop-rank ${idx<3?'t':''}">${String(idx+1).padStart(2,"0")}</span>
       <img class="pop-img" src="${IMG(i.thumbnail)}" onerror="this.style.background='var(--card2)'" loading="lazy"/>
@@ -642,133 +606,203 @@ function renderPopular(items){
     </div>`).join("");
 }
 
+// ── HOME ──
+async function loadHome() {
+  try {
+    const [homeData, newData, anData] = await Promise.all([
+      apiGet(DH_API, {cmd:"home"}),
+      apiGet(DH_API, {cmd:"new-series", page:1}),
+      apiGet(AN_API, {cmd:"terbaru", page:1}),  // terbaru dari otakudesu
+    ]);
+    const pop = homeData.popular_series||[];
+    if (pop.length) heroTimer = buildHero("hero-track","hero-dots", pop.slice(0,8), i=>openDetail(encodeURIComponent(slug(i.url))), "DONGHUA");
+    renderGrid3(document.getElementById("home-donghua"), (homeData.latest_episodes||[]).slice(0,9), "dh");
+    // Anime dari otakudesu: data array
+    const anItems = (anData.data||[]).slice(0,9);
+    renderGrid3(document.getElementById("home-anime"), anItems, "anime");
+    renderPopular(pop);
+    renderGrid3(document.getElementById("home-new"), (newData.result||[]).slice(0,9), "dh");
+  } catch(e) {
+    document.getElementById("home-donghua").innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal memuat</div>`;
+  }
+  renderCW();
+}
+
 // ── DONGHUA SECTION ──
-async function loadDonghuaSection(){
-  try{
-    const homeData=await apiGet(DH_API,{cmd:"home"});
-    const pop=homeData.popular_series||[];
-    if(pop.length){
-      dhHeroTimer=buildHero("dh-hero-track","dh-hero-dots",pop.slice(0,8),dhHeroTimer,
-        i=>openDetail(encodeURIComponent(slug(i.url))),"DONGHUA");
-    }
-    renderGrid3(document.getElementById("dh-latest"),(homeData.latest_episodes||[]).slice(0,9),"dh");
-  }catch{}
+async function loadDonghuaSection() {
+  try {
+    const homeData = await apiGet(DH_API, {cmd:"home"});
+    const pop = homeData.popular_series||[];
+    if (pop.length) dhHeroTimer = buildHero("dh-hero-track","dh-hero-dots", pop.slice(0,8), i=>openDetail(encodeURIComponent(slug(i.url))), "DONGHUA");
+    renderGrid3(document.getElementById("dh-latest"), (homeData.latest_episodes||[]).slice(0,9), "dh");
+  } catch {}
   loadDHGrid();
 }
-async function loadDHGrid(){
-  const el=document.getElementById("dh-grid");
-  el.innerHTML=`<div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div>`;
-  try{
-    const d=await apiGet(DH_API,{cmd:dhMode==="new"?"new-series":"completed",page:dhPage});
-    if(!d.result||!d.result.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada data</div>`;return}
-    el.innerHTML=d.result.map(i=>gcHTML(i,"dh")).join("");
-    document.getElementById("dpage-prev").disabled=dhPage<=1;
-    document.getElementById("dpage-next").disabled=!d.has_next;
-  }catch{el.innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal</div>`}
+async function loadDHGrid() {
+  const el = document.getElementById("dh-grid");
+  el.innerHTML = `<div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div>`;
+  try {
+    const d = await apiGet(DH_API, {cmd: dhMode==="new"?"new-series":"completed", page:dhPage});
+    if (!d.result||!d.result.length) { el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada data</div>`; return; }
+    el.innerHTML = d.result.map(i => gcHTML(i,"dh")).join("");
+    document.getElementById("dpage-prev").disabled = dhPage<=1;
+    document.getElementById("dpage-next").disabled = !d.has_next;
+  } catch { el.innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal</div>`; }
 }
-function switchDonghua(mode){dhMode=mode;dhPage=1;
-  document.getElementById("dtab-new").classList.toggle("active",mode==="new");
-  document.getElementById("dtab-done").classList.toggle("active",mode==="completed");
-  loadDHGrid()}
-function changeDPage(dir){dhPage=Math.max(1,dhPage+dir);loadDHGrid();window.scrollTo({top:0,behavior:"smooth"})}
+function switchDonghua(mode) {
+  dhMode=mode; dhPage=1;
+  document.getElementById("dtab-new").classList.toggle("active", mode==="new");
+  document.getElementById("dtab-done").classList.toggle("active", mode==="completed");
+  loadDHGrid();
+}
+function changeDPage(dir) { dhPage=Math.max(1,dhPage+dir); loadDHGrid(); window.scrollTo({top:0,behavior:"smooth"}); }
 
-// ── ANIME SECTION ──
-async function loadAnimeSection(){
-  try{
-    const d=await apiGet(GM_API,{cmd:"home"});
-    const items=d.data||[];
-    if(items.length){
-      anHeroTimer=buildHero("an-hero-track","an-hero-dots",
-        items.slice(0,8).map(i=>({...i,thumbnail:i.poster})),anHeroTimer,
-        i=>openAnimeDetail(encodeURIComponent(slug(i.link||""))),"ANIME");
+// ── ANIME SECTION (Otakudesu) ──
+async function loadAnimeSection() {
+  try {
+    const d = await apiGet(AN_API, {cmd:"terbaru", page:1});
+    const items = (d.data||[]).slice(0,8);
+    if (items.length) {
+      anHeroTimer = buildHero("an-hero-track","an-hero-dots",
+        items.map(i => ({...i, thumbnail: i.image||i.poster})),
+        i => openAnimeDetail(encodeURIComponent(slug(i.link||i.url||""))), "ANIME");
     }
-    renderGrid3(document.getElementById("an-latest"),items.slice(0,9),"anime");
-  }catch{}
+    renderGrid3(document.getElementById("an-latest"), (d.data||[]).slice(0,9), "anime");
+  } catch {}
   loadAnGrid();
 }
-async function loadAnGrid(){
-  const el=document.getElementById("an-grid");
-  el.innerHTML=`<div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div>`;
-  try{
-    const d=await apiGet(GM_API,{cmd:anMode,page:anPage});
-    const items=d.data||[];
-    if(!items.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada data</div>`;return}
-    el.innerHTML=items.map(i=>gcHTML(i,"anime")).join("");
-    document.getElementById("apage-prev").disabled=anPage<=1;
-    document.getElementById("apage-next").disabled=items.length<12;
-  }catch{el.innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal</div>`}
+async function loadAnGrid() {
+  const el = document.getElementById("an-grid");
+  el.innerHTML = `<div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div>`;
+  try {
+    const cmd = anMode==="ongoing" ? "ongoing" : "completed";
+    const d = await apiGet(AN_API, {cmd, page:anPage});
+    const items = d.data||[];
+    if (!items.length) { el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada data</div>`; return; }
+    el.innerHTML = items.map(i => gcHTML(i,"anime")).join("");
+    document.getElementById("apage-prev").disabled = anPage<=1;
+    document.getElementById("apage-next").disabled = !(d.pagination&&d.pagination.hasNext);
+  } catch { el.innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal</div>`; }
 }
-function switchAnime(mode){anMode=mode;anPage=1;
-  document.getElementById("atab-ongoing").classList.toggle("active",mode==="ongoing");
-  document.getElementById("atab-done").classList.toggle("active",mode==="completed");
-  loadAnGrid()}
-function changeAPage(dir){anPage=Math.max(1,anPage+dir);loadAnGrid();window.scrollTo({top:0,behavior:"smooth"})}
+function switchAnime(mode) {
+  anMode=mode; anPage=1;
+  document.getElementById("atab-ongoing").classList.toggle("active", mode==="ongoing");
+  document.getElementById("atab-done").classList.toggle("active", mode==="completed");
+  loadAnGrid();
+}
+function changeAPage(dir) { anPage=Math.max(1,anPage+dir); loadAnGrid(); window.scrollTo({top:0,behavior:"smooth"}); }
 
-// ── SEARCH ──
-document.getElementById("s-input").addEventListener("keydown",e=>{if(e.key==="Enter")doSearch()});
-function setSearchMode(m){searchMode=m;
-  document.getElementById("smode-dh").classList.toggle("active",m==="donghua");
-  document.getElementById("smode-an").classList.toggle("active",m==="anime")}
-async function doSearch(){
-  const q=document.getElementById("s-input").value.trim();if(!q)return;
-  const el=document.getElementById("search-results");
-  el.innerHTML=`<div class="loader"><div class="spinner"></div><div class="ldr-txt">Mencari "${q}"...</div></div>`;
-  try{
-    if(searchMode==="donghua"){
-      const d=await apiGet(DH_API,{cmd:"search",query:q});
-      if(!d.result||!d.result.length){el.innerHTML=`<div class="empty"><div class="empty-ico">🔍</div>Tidak ada hasil</div>`;return}
-      el.innerHTML=`<div class="grid3" style="padding-top:8px">${d.result.map(i=>gcHTML(i,"dh")).join("")}</div>`;
-    } else {
-      const d=await apiGet(GM_API,{cmd:"search",query:q});
-      if(!d.data||!d.data.length){el.innerHTML=`<div class="empty"><div class="empty-ico">🔍</div>Tidak ada hasil</div>`;return}
-      el.innerHTML=`<div class="grid3" style="padding-top:8px">${d.data.map(i=>gcHTML(i,"anime")).join("")}</div>`;
+// ── SEARCH (unified — cari di DH + Anime, tampil gabung) ──
+document.getElementById("s-input").addEventListener("keydown", e => { if(e.key==="Enter") doSearch(); });
+async function doSearch() {
+  const q = document.getElementById("s-input").value.trim(); if (!q) return;
+  const el = document.getElementById("search-results");
+  el.innerHTML = `<div class="loader"><div class="spinner"></div><div class="ldr-txt">Mencari "${q}"...</div></div>`;
+  try {
+    const [dhRes, anRes] = await Promise.allSettled([
+      apiGet(DH_API, {cmd:"search", query:q}),
+      apiGet(AN_API, {cmd:"search", query:q}),
+    ]);
+    const dhItems = (dhRes.status==="fulfilled" ? dhRes.value.result||[] : []);
+    const anItems = (anRes.status==="fulfilled" ? anRes.value.data||[] : []);
+
+    if (!dhItems.length && !anItems.length) {
+      el.innerHTML = `<div class="empty"><div class="empty-ico">🔍</div>Tidak ada hasil untuk "${q}"</div>`;
+      return;
     }
-  }catch{el.innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div>Gagal mencari</div>`}
+    let html = "";
+    if (dhItems.length) {
+      html += `<div class="sh" style="padding-top:8px"><span class="sh-title"><span class="dot"></span>Donghua (${dhItems.length})</span></div>
+               <div class="grid3">${dhItems.map(i=>gcHTML(i,"dh")).join("")}</div>`;
+    }
+    if (anItems.length) {
+      html += `<div class="sh" style="padding-top:14px"><span class="sh-title"><span class="dot"></span>Anime (${anItems.length})</span></div>
+               <div class="grid3">${anItems.map(i=>gcHTML(i,"anime")).join("")}</div>`;
+    }
+    el.innerHTML = html;
+  } catch {
+    el.innerHTML = `<div class="empty"><div class="empty-ico">⚠️</div>Gagal mencari</div>`;
+  }
 }
 
-// ── SCHEDULE ──
-async function loadSchedule(){
-  scheduleLoaded=true;
-  try{
-    const d=await apiGet(DH_API,{cmd:"schedule"});
-    scheduleData=d.result||{};
-    const days=Object.keys(scheduleData);
-    if(!days.length){document.getElementById("sch-grid").innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada jadwal</div>`;return}
-    const todayMap=["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
-    const todayName=todayMap[new Date().getDay()];
-    currentDay=days.includes(todayName)?todayName:days[0];
-    document.getElementById("day-tabs").innerHTML=days.map(day=>
+// ── SCHEDULE (Donghua + Anime digabung per hari) ──
+async function loadSchedule() {
+  scheduleLoaded = true;
+  const content = document.getElementById("sch-content");
+  try {
+    const [dhSch, anSch] = await Promise.allSettled([
+      apiGet(DH_API, {cmd:"schedule"}),
+      apiGet(AN_API, {cmd:"schedule"}),
+    ]);
+    // Donghua: scheduleData[day] = [{title,url,...}]
+    const dhData = dhSch.status==="fulfilled" ? dhSch.value.result||{} : {};
+    // Anime: {schedule:{Senin:[{title,link},...], ...}}
+    const anData = anSch.status==="fulfilled" ? (anSch.value.schedule||{}) : {};
+
+    // Merge per hari
+    const allDays = new Set([...Object.keys(dhData), ...Object.keys(anData)]);
+    if (!allDays.size) {
+      content.innerHTML=`<div class="empty">Tidak ada jadwal</div>`;
+      return;
+    }
+    scheduleData = {};
+    for (const day of allDays) {
+      scheduleData[day] = [
+        ...(dhData[day]||[]).map(i=>({...i, _type:"dh"})),
+        ...(anData[day]||[]).map(i=>({...i, _type:"an"})),
+      ];
+    }
+
+    const days = Object.keys(scheduleData);
+    const todayMap = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+    const todayName = todayMap[new Date().getDay()];
+    currentDay = days.includes(todayName) ? todayName : days[0];
+
+    document.getElementById("day-tabs").innerHTML = days.map(day =>
       `<button class="day-tab ${day===currentDay?'active':''}" onclick="switchDay('${day}')">${day}</button>`).join("");
     renderSchDay(currentDay);
-  }catch{document.getElementById("sch-grid").innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal</div>`}
+  } catch {
+    content.innerHTML = `<div class="empty">⚠️ Gagal memuat jadwal</div>`;
+  }
 }
-function switchDay(day){
-  currentDay=day;
-  document.querySelectorAll(".day-tab").forEach(b=>b.classList.toggle("active",b.textContent===day));
+
+function switchDay(day) {
+  currentDay = day;
+  document.querySelectorAll(".day-tab").forEach(b => b.classList.toggle("active", b.textContent===day));
   renderSchDay(day);
 }
-function renderSchDay(day){
-  const items=scheduleData[day]||[];
-  const el=document.getElementById("sch-grid");
-  if(!items.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada jadwal</div>`;return}
-  el.innerHTML=items.map(i=>gcHTML(i,"dh")).join("");
+function renderSchDay(day) {
+  const items = scheduleData[day]||[];
+  const el = document.getElementById("sch-content");
+  if (!items.length) { el.innerHTML=`<div class="empty">Tidak ada jadwal</div>`; return; }
+  el.innerHTML = `<div class="sch-list">${items.map(i => {
+    const isDH = i._type==="dh";
+    const linkSlug = slug(i.url||i.link||"");
+    const onclick = isDH
+      ? `openDetail('${encodeURIComponent(linkSlug)}')`
+      : `openAnimeDetail('${encodeURIComponent(linkSlug)}')`;
+    return `<div class="sch-item" onclick="${onclick}">
+      <span class="sch-badge ${isDH?'dh':'an'}">${isDH?"DONGHUA":"ANIME"}</span>
+      <span class="sch-title">${i.title}</span>
+      <span class="sch-arr">›</span>
+    </div>`;
+  }).join("")}</div>`;
 }
 
 // ── DONGHUA DETAIL ──
-async function openDetail(encodedSlug){
-  const s=decodeURIComponent(encodedSlug);
-  const page=document.getElementById("detail-page");
-  const body=document.getElementById("dp-body");
-  document.getElementById("dp-back-title").textContent=s;
-  body.innerHTML=`<div class="loader" style="padding:70px"><div class="spinner"></div><div class="ldr-txt">Memuat...</div></div>`;
-  page.classList.add("open");document.body.style.overflow="hidden";
-  try{
-    const d=await apiGet(DH_API,{cmd:"detail",slug:s});
-    if(d.error){body.innerHTML=`<div class="empty"><div class="empty-ico">😞</div>${d.error}</div>`;return}
-    if(d.not_series){body.innerHTML=`<div class="empty"><div class="empty-ico">📄</div>Konten ini bukan series</div>`;return}
-    document.getElementById("dp-back-title").textContent=d.title;
-    const eps=d.result||[];
-    body.innerHTML=`
+async function openDetail(encodedSlug) {
+  const s = decodeURIComponent(encodedSlug);
+  const page = document.getElementById("detail-page"), body = document.getElementById("dp-body");
+  document.getElementById("dp-back-title").textContent = s;
+  body.innerHTML = `<div class="loader" style="padding:70px"><div class="spinner"></div><div class="ldr-txt">Memuat...</div></div>`;
+  page.classList.add("open"); document.body.style.overflow = "hidden";
+  try {
+    const d = await apiGet(DH_API, {cmd:"detail", slug:s});
+    if (d.error) { body.innerHTML=`<div class="empty"><div class="empty-ico">😞</div>${d.error}</div>`; return; }
+    if (d.not_series) { body.innerHTML=`<div class="empty"><div class="empty-ico">📄</div>Konten ini bukan series</div>`; return; }
+    document.getElementById("dp-back-title").textContent = d.title;
+    const eps = d.result||[];
+    body.innerHTML = `
       <div class="dp-banner"><img class="dp-banner-img" src="${IMG(d.poster)}" onerror="this.style.display='none'"/></div>
       <div class="dp-content">
         <div class="dp-row">
@@ -795,126 +829,170 @@ async function openDetail(encodedSlug){
             </div>`).join("")}
         </div>
       </div>`;
-  }catch{body.innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div>Gagal memuat</div>`}
+  } catch { body.innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div>Gagal memuat</div>`; }
 }
-function closeDetail(){document.getElementById("detail-page").classList.remove("open");document.body.style.overflow=""}
+function closeDetail() { document.getElementById("detail-page").classList.remove("open"); document.body.style.overflow=""; }
 
-// ── ANIME DETAIL ──
-async function openAnimeDetail(encodedSlug){
-  const s=decodeURIComponent(encodedSlug);
-  const page=document.getElementById("detail-page");
-  const body=document.getElementById("dp-body");
-  document.getElementById("dp-back-title").textContent=s;
-  body.innerHTML=`<div class="loader" style="padding:70px"><div class="spinner"></div><div class="ldr-txt">Memuat anime...</div></div>`;
-  page.classList.add("open");document.body.style.overflow="hidden";
-  try{
-    const d=await apiGet(GM_API,{cmd:"detail",slug:s});
-    if(d.error){body.innerHTML=`<div class="empty"><div class="empty-ico">😞</div>${d.error}</div>`;return}
-    document.getElementById("dp-back-title").textContent=d.title||s;
-    const eps=d.episodeList||[];
-    body.innerHTML=`
+// ── ANIME DETAIL (Otakudesu) ──
+async function openAnimeDetail(encodedSlug) {
+  const s = decodeURIComponent(encodedSlug);
+  const page = document.getElementById("detail-page"), body = document.getElementById("dp-body");
+  document.getElementById("dp-back-title").textContent = s;
+  body.innerHTML = `<div class="loader" style="padding:70px"><div class="spinner"></div><div class="ldr-txt">Memuat anime...</div></div>`;
+  page.classList.add("open"); document.body.style.overflow = "hidden";
+  try {
+    const d = await apiGet(AN_API, {cmd:"detail", slug:s});
+    if (d.error) { body.innerHTML=`<div class="empty"><div class="empty-ico">😞</div>${d.error}</div>`; return; }
+    document.getElementById("dp-back-title").textContent = d.title||s;
+    const eps = d.episodes||[];
+    body.innerHTML = `
       <div class="dp-banner"><img class="dp-banner-img" src="${IMG(d.poster)}" onerror="this.style.display='none'"/></div>
       <div class="dp-content">
         <div class="dp-row">
           <img class="dp-poster" src="${IMG(d.poster)}" onerror="this.style.background='var(--card2)'"/>
           <div class="dp-meta">
             <div class="dp-title">${d.title||s}</div>
-            <div class="dp-tags"><span class="dp-tag anime" style="background:rgba(255,107,107,.12);color:#ff8e8e;border-color:rgba(255,107,107,.3)">Anime</span>${d.status?`<span class="dp-tag">${d.status}</span>`:""}</div>
+            <div class="dp-tags">
+              <span class="dp-tag" style="background:rgba(255,107,107,.12);color:#ff8e8e;border-color:rgba(255,107,107,.3)">Anime</span>
+              ${(d.genres||[]).slice(0,3).map(g=>`<span class="dp-tag">${g}</span>`).join("")}
+            </div>
             <div class="dp-stats">
-              ${d.rating?`<div class="dp-stat">⭐ <strong>${d.rating}</strong></div>`:""}
+              ${d.score?`<div class="dp-stat">⭐ <strong>${d.score}</strong></div>`:""}
               ${d.totalEpisodes?`<div class="dp-stat">🎬 <strong>${d.totalEpisodes} Ep</strong></div>`:""}
+              ${(d.info&&d.info['Status'])?`<div class="dp-stat">📺 <strong>${d.info['Status']}</strong></div>`:""}
             </div>
           </div>
         </div>
-        ${d.description?`<div class="dp-synopsis">${d.description.substring(0,350)}...</div>`:""}
+        ${d.synopsis?`<div class="dp-synopsis">${d.synopsis.substring(0,400)}...</div>`:""}
         <div class="ep-list-hd">Daftar Episode <span>(${eps.length})</span></div>
         <div class="ep-list">
-          ${eps.map(e=>`
-            <div class="ep-row" onclick="openAnimeWatch('${encodeURIComponent(e.url)}','${encodeURIComponent(d.title||s)}')">
-              <span class="ep-row-num">Ep ${e.episode}</span>
-              <span class="ep-row-title">${(d.title||s)} Episode ${e.episode}</span>
+          ${eps.map(e => {
+            const epNum = e.episode || (e.title.match(/Episode\s+(\d+)/i)?.[1]);
+            const epSlug = slug(e.url);
+            // extract series slug from detail url: {slug} → episode: {series-slug}-episode-{n}
+            const seriesSlug = s; // detail slug = series slug
+            return `<div class="ep-row" onclick="openAnimeEpisode('${encodeURIComponent(seriesSlug)}',${epNum||0},'${encodeURIComponent(d.title||s)}','${encodeURIComponent(d.poster||"")}')">
+              <span class="ep-row-num">Ep ${epNum||"?"}</span>
+              <span class="ep-row-title">${e.title||d.title}</span>
+              <span class="ep-row-date">${e.releaseDate||""}</span>
               <span class="ep-row-arr">›</span>
-            </div>`).join("")}
+            </div>`;
+          }).join("")}
         </div>
       </div>`;
-  }catch(e){body.innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div>Gagal: ${e.message}</div>`}
+  } catch(e) { body.innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div>Gagal: ${e.message}</div>`; }
 }
 
 // ── DONGHUA WATCH ──
-async function openWatch(encodedSlug,encodedSeries,encodedThumb){
-  const s=decodeURIComponent(encodedSlug);
-  const seriesTitle=encodedSeries?decodeURIComponent(encodedSeries):"";
-  const thumb=encodedThumb?decodeURIComponent(encodedThumb):"";
-  const page=document.getElementById("watch-page");
-  document.getElementById("wp-back-title").textContent=s;
-  document.getElementById("wp-ep-title").textContent="";
-  document.getElementById("wp-series-title").textContent=seriesTitle;
-  document.getElementById("player-frame").src="";
-  document.getElementById("srv-list").innerHTML=`<div class="loader" style="width:100%"><div class="spinner"></div></div>`;
-  document.getElementById("btn-prev-ep").disabled=true;
-  document.getElementById("btn-next-ep").disabled=true;
+async function openWatch(encodedSlug, encodedSeries, encodedThumb) {
+  const s = decodeURIComponent(encodedSlug);
+  const seriesTitle = encodedSeries ? decodeURIComponent(encodedSeries) : "";
+  const thumb = encodedThumb ? decodeURIComponent(encodedThumb) : "";
+  const page = document.getElementById("watch-page");
+  document.getElementById("wp-back-title").textContent = s;
+  document.getElementById("wp-ep-title").textContent = "";
+  document.getElementById("wp-series-title").textContent = seriesTitle;
+  document.getElementById("player-frame").src = "";
+  document.getElementById("srv-list").innerHTML = `<div class="loader" style="width:100%"><div class="spinner"></div></div>`;
+  document.getElementById("btn-prev-ep").disabled = true;
+  document.getElementById("btn-next-ep").disabled = true;
   page.classList.add("open");
-  try{
-    const d=await apiGet(DH_API,{cmd:"watch",slug:s});
-    watchData=d;
-    document.getElementById("wp-back-title").textContent=d.title;
-    document.getElementById("wp-ep-title").textContent=d.title;
-    const isValid=u=>typeof u==="string"&&/^https?:\/\//i.test(u.trim());
-    const url=isValid(d.video_url)?d.video_url:(d.servers||[]).map(s=>s.url).find(isValid);
-    if(url)document.getElementById("player-frame").src=url;
-    const allSrv=[];
-    if(isValid(d.video_url))allSrv.push({name:"Default",url:d.video_url});
-    (d.servers||[]).forEach(sv=>{if(isValid(sv.url)&&sv.url!==d.video_url)allSrv.push(sv)});
-    const sl=document.getElementById("srv-list");
-    sl.innerHTML=allSrv.length
-      ?allSrv.map((sv,i)=>`<button class="srv-btn ${sv.url===url?'active':''}" onclick="switchSrv(this,'${encodeURIComponent(sv.url)}')">${sv.name||"Mirror "+(i+1)}</button>`).join("")
-      :`<div style="color:var(--muted);font-size:12.5px;padding:6px 0">⚠️ Tidak ada mirror tersedia</div>`;
-    document.getElementById("btn-prev-ep").disabled=!d.prev_episode;
-    document.getElementById("btn-next-ep").disabled=!d.next_episode;
-    if(seriesTitle)addHist(s,d.title,seriesTitle,thumb,"donghua");
-  }catch{document.getElementById("srv-list").innerHTML=`<div style="color:var(--muted);font-size:12.5px">⚠️ Gagal memuat player</div>`}
+  try {
+    const d = await apiGet(DH_API, {cmd:"watch", slug:s});
+    watchData = {...d, _type:"dh"};
+    document.getElementById("wp-back-title").textContent = d.title;
+    document.getElementById("wp-ep-title").textContent = d.title;
+    const isValid = u => typeof u==="string" && /^https?:\/\//i.test(u.trim());
+    const url = isValid(d.video_url) ? d.video_url : (d.servers||[]).map(s=>s.url).find(isValid);
+    if (url) document.getElementById("player-frame").src = url;
+    const allSrv = [];
+    if (isValid(d.video_url)) allSrv.push({name:"Default", url:d.video_url});
+    (d.servers||[]).forEach(sv => { if(isValid(sv.url)&&sv.url!==d.video_url) allSrv.push(sv); });
+    const sl = document.getElementById("srv-list");
+    sl.innerHTML = allSrv.length
+      ? allSrv.map((sv,i) => `<button class="srv-btn ${sv.url===url?'active':''}" onclick="switchSrv(this,'${encodeURIComponent(sv.url)}')">${sv.name||"Mirror "+(i+1)}</button>`).join("")
+      : `<div style="color:var(--muted);font-size:12.5px;padding:6px 0">⚠️ Tidak ada mirror</div>`;
+    document.getElementById("btn-prev-ep").disabled = !d.prev_episode;
+    document.getElementById("btn-next-ep").disabled = !d.next_episode;
+    if (seriesTitle) addHist(s, d.title, seriesTitle, thumb, "donghua");
+  } catch { document.getElementById("srv-list").innerHTML=`<div style="color:var(--muted);font-size:12.5px">⚠️ Gagal memuat player</div>`; }
 }
 
-// ── ANIME WATCH ──
-async function openAnimeWatch(encodedUrl,encodedTitle){
-  const epUrl=decodeURIComponent(encodedUrl);
-  const title=encodedTitle?decodeURIComponent(encodedTitle):"";
-  const page=document.getElementById("watch-page");
-  document.getElementById("wp-back-title").textContent=title;
-  document.getElementById("wp-ep-title").textContent=title;
-  document.getElementById("wp-series-title").textContent="Anime";
-  document.getElementById("player-frame").src="";
-  document.getElementById("srv-list").innerHTML=`<div class="loader" style="width:100%"><div class="spinner"></div></div>`;
-  document.getElementById("btn-prev-ep").disabled=true;
-  document.getElementById("btn-next-ep").disabled=true;
-  watchData=null;
+// ── ANIME WATCH (Otakudesu — pakai episode endpoint) ──
+async function openAnimeEpisode(encodedSeriesSlug, epNum, encodedTitle, encodedPoster) {
+  const seriesSlug = decodeURIComponent(encodedSeriesSlug);
+  const title = encodedTitle ? decodeURIComponent(encodedTitle) : "";
+  const poster = encodedPoster ? decodeURIComponent(encodedPoster) : "";
+  const page = document.getElementById("watch-page");
+  document.getElementById("wp-back-title").textContent = title;
+  document.getElementById("wp-ep-title").textContent = `${title} — Episode ${epNum}`;
+  document.getElementById("wp-series-title").textContent = "Anime";
+  document.getElementById("player-frame").src = "";
+  document.getElementById("srv-list").innerHTML = `<div class="loader" style="width:100%"><div class="spinner"></div></div>`;
+  document.getElementById("btn-prev-ep").disabled = true;
+  document.getElementById("btn-next-ep").disabled = true;
+  watchData = null;
   page.classList.add("open");
-  try{
-    const d=await apiGet(GM_API,{cmd:"watch",url:epUrl});
-    const iframes=(d.iframes||[]).filter(u=>/^https?:\/\//i.test(u));
-    if(iframes.length)document.getElementById("player-frame").src=iframes[0];
-    const sl=document.getElementById("srv-list");
-    sl.innerHTML=iframes.length
-      ?iframes.map((u,i)=>`<button class="srv-btn ${i===0?'active':''}" onclick="switchSrv(this,'${encodeURIComponent(u)}')">${"Mirror "+(i+1)}</button>`).join("")
-      :`<div style="color:var(--muted);font-size:12.5px;padding:6px 0">⚠️ Tidak ada mirror</div>`;
-    addHist(epUrl,title,title,"","anime");
-  }catch{document.getElementById("srv-list").innerHTML=`<div style="color:var(--muted);font-size:12.5px">⚠️ Gagal memuat</div>`}
+  try {
+    const d = await apiGet(AN_API, {cmd:"episode", slug:seriesSlug, epnum:epNum});
+    watchData = {...d, _type:"anime", _seriesSlug:seriesSlug, _title:title, _poster:poster, _epNum:epNum};
+    // Ambil embed pertama
+    const firstEmbed = d.defaultEmbed || (d.embedPlayers&&d.embedPlayers[0]?.servers[0]?.embedUrl) || null;
+    if (firstEmbed) document.getElementById("player-frame").src = firstEmbed;
+    // Build server list: semua quality + server
+    const sl = document.getElementById("srv-list");
+    const allServers = [];
+    (d.embedPlayers||[]).forEach(qg => {
+      (qg.servers||[]).forEach(sv => {
+        allServers.push({name:`${qg.quality} — ${sv.server}`, url:sv.embedUrl});
+      });
+    });
+    sl.innerHTML = allServers.length
+      ? allServers.map((sv,i) => `<button class="srv-btn ${i===0?'active':''}" onclick="switchSrv(this,'${encodeURIComponent(sv.url)}')">${sv.name}</button>`).join("")
+      : `<div style="color:var(--muted);font-size:12.5px;padding:6px 0">⚠️ Tidak ada mirror tersedia</div>`;
+    document.getElementById("btn-prev-ep").disabled = !d.prevEpisode;
+    document.getElementById("btn-next-ep").disabled = !d.nextEpisode;
+    addHist(`${seriesSlug}:${epNum}`, `Episode ${epNum}`, title, poster, "anime");
+  } catch(e) { document.getElementById("srv-list").innerHTML=`<div style="color:var(--muted);font-size:12.5px">⚠️ Gagal: ${e.message}</div>`; }
 }
 
-function switchSrv(btn,encodedUrl){
-  document.querySelectorAll(".srv-btn").forEach(b=>b.classList.remove("active"));
+// Fallback untuk history lama (openAnimeWatch)
+async function openAnimeWatch(encodedUrl, encodedTitle) {
+  // URL lama = seriesSlug:epNum dari history baru, atau URL lama gomunime
+  const raw = decodeURIComponent(encodedUrl);
+  const title = encodedTitle ? decodeURIComponent(encodedTitle) : "";
+  if (raw.includes(":")) {
+    const [slug, epNum] = raw.split(":");
+    await openAnimeEpisode(encodeURIComponent(slug), parseInt(epNum), encodedTitle, "");
+  } else {
+    // fallback kosong
+    toast("Format lama tidak didukung, cari ulang anime-nya ya!");
+  }
+}
+
+function switchSrv(btn, encodedUrl) {
+  document.querySelectorAll(".srv-btn").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
-  document.getElementById("player-frame").src=decodeURIComponent(encodedUrl);
+  document.getElementById("player-frame").src = decodeURIComponent(encodedUrl);
 }
-function navEp(dir){
-  if(!watchData)return;
-  const url=dir==="next"?watchData.next_episode:watchData.prev_episode;
-  if(url)openWatch(encodeURIComponent(slug(url)));
+
+function navEp(dir) {
+  if (!watchData) return;
+  if (watchData._type==="anime") {
+    const nextNum = dir==="next" ? watchData._epNum+1 : watchData._epNum-1;
+    if (nextNum < 1) return;
+    openAnimeEpisode(encodeURIComponent(watchData._seriesSlug), nextNum,
+      encodeURIComponent(watchData._title), encodeURIComponent(watchData._poster));
+  } else {
+    const url = dir==="next" ? watchData.next_episode : watchData.prev_episode;
+    if (url) openWatch(encodeURIComponent(slug(url)));
+  }
 }
-function closeWatch(){
+
+function closeWatch() {
   document.getElementById("watch-page").classList.remove("open");
-  document.getElementById("player-frame").src="";
-  watchData=null;renderCW();
+  document.getElementById("player-frame").src = "";
+  watchData = null; renderCW();
 }
 
 loadHome();
