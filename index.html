@@ -3,41 +3,37 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
-<title>ClaudeNime — Streaming Donghua</title>
+<title>ClaudeNime — Streaming Donghua & Anime</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 :root{
-  --bg:#0f0817;--surface:rgba(24,15,41,0.7);--card:rgba(31,20,51,0.75);--card2:rgba(40,25,63,0.8);
+  --bg:#0f0817;--surface:rgba(24,15,41,.75);--card:rgba(31,20,51,.8);--card2:rgba(40,25,63,.85);
   --border:#322248;--border2:#3d2a5a;
   --purple:#a25bff;--purple2:#c389ff;--purple-dim:#5a3d80;--purple-bg:#2a1a45;
   --text:#f0eaf8;--text2:#b8a8d0;--muted:#7a6a94;
   --radius:14px;--radius-sm:10px;--nav-h:62px;
-  --transition:cubic-bezier(.4,0,.2,1);
+  --ease:cubic-bezier(.4,0,.2,1);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;overflow-x:hidden}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--purple-dim);border-radius:2px}
 #galaxy-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
 #app-wrap{position:relative;z-index:1}
-::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--purple-dim);border-radius:2px}
 
 /* ── TOPNAV ── */
 #topnav{position:fixed;top:0;left:0;right:0;z-index:200;height:var(--nav-h);
   background:rgba(15,8,23,.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;padding:0 18px;
-  transition:transform .3s var(--transition)}
-#topnav.hide{transform:translateY(-100%)}
+  display:flex;align-items:center;justify-content:space-between;padding:0 18px}
 .logo{font-family:'Poppins',sans-serif;font-size:18px;font-weight:800;
-  background:linear-gradient(135deg,var(--purple) 0%,var(--purple2) 60%,#ff8aff 100%);
+  background:linear-gradient(135deg,var(--purple),var(--purple2),#ff8aff);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.5px}
-.logo-sub{font-size:9px;color:var(--muted);font-family:'Inter',sans-serif;
-  -webkit-text-fill-color:var(--muted);display:block;margin-top:-2px;letter-spacing:1.5px}
+.logo-sub{font-size:9px;color:var(--muted);-webkit-text-fill-color:var(--muted);display:block;margin-top:-2px;letter-spacing:1.5px}
 .icon-btn{background:var(--card);border:1px solid var(--border);border-radius:50%;
   width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;
-  transition:all .25s var(--transition);position:relative}
+  backdrop-filter:blur(8px);transition:all .25s var(--ease)}
 .icon-btn:active{transform:scale(.9);border-color:var(--purple-dim)}
-.icon-btn svg{width:17px;height:17px;stroke:var(--text2);fill:none;stroke-width:2;transition:stroke .2s}
-.icon-btn:active svg{stroke:var(--purple2)}
+.icon-btn svg{width:17px;height:17px;stroke:var(--text2);fill:none;stroke-width:2}
 
 /* ── BOTNAV ── */
 #botnav{position:fixed;bottom:0;left:0;right:0;z-index:200;height:var(--nav-h);
@@ -45,117 +41,73 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
   display:flex;align-items:center;justify-content:space-around;padding:0 4px}
 .bnav{display:flex;flex-direction:column;align-items:center;gap:3px;
   padding:6px 8px;cursor:pointer;color:var(--muted);font-size:9px;font-weight:500;
-  border:none;background:none;transition:all .25s var(--transition);position:relative;
-  border-radius:var(--radius-sm);flex:1}
-.bnav svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;transition:all .25s var(--transition)}
+  border:none;background:none;transition:all .25s var(--ease);flex:1;position:relative;border-radius:var(--radius-sm)}
+.bnav svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;transition:all .25s var(--ease)}
 .bnav.active{color:var(--purple2)}
-.bnav.active svg{stroke:var(--purple2);transform:translateY(-2px);filter:drop-shadow(0 0 8px rgba(162,91,255,.6))}
+.bnav.active svg{stroke:var(--purple2);filter:drop-shadow(0 0 6px rgba(162,91,255,.6))}
 .bnav::after{content:'';position:absolute;bottom:2px;left:50%;width:0;height:3px;
-  background:var(--purple);border-radius:2px;transition:all .3s var(--transition);transform:translateX(-50%)}
-.bnav.active::after{width:18px}
+  background:var(--purple);border-radius:2px;transition:all .3s var(--ease);transform:translateX(-50%)}
+.bnav.active::after{width:16px}
 
 /* ── APP ── */
 #app{padding-top:var(--nav-h);padding-bottom:calc(var(--nav-h)+8px);min-height:100vh}
-.section{display:none;animation:fadeIn .35s var(--transition)}
+.section{display:none;animation:fadeIn .3s var(--ease)}
 .section.active{display:block}
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
-/* ── COMMON ── */
-.sh{display:flex;align-items:center;justify-content:space-between;padding:20px 18px 12px}
-.sh-title{font-size:17px;font-weight:700;color:var(--text);font-family:'Poppins',sans-serif;
+/* ── SHARED ── */
+.sh{display:flex;align-items:center;justify-content:space-between;padding:18px 18px 10px}
+.sh-title{font-family:'Poppins',sans-serif;font-size:16px;font-weight:700;color:var(--text);
   display:flex;align-items:center;gap:8px}
-.sh-title .dot{width:6px;height:6px;border-radius:50%;background:var(--purple);
-  box-shadow:0 0 10px var(--purple)}
-.sh-more{font-size:12px;color:var(--purple2);cursor:pointer;background:none;border:none;
-  font-weight:600;display:flex;align-items:center;gap:3px;transition:opacity .2s}
-.sh-more:active{opacity:.6}
-.gline{height:1px;background:linear-gradient(to right,transparent,var(--purple-dim) 50%,transparent);margin:6px 0}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--purple);box-shadow:0 0 10px var(--purple);flex-shrink:0}
+.sh-more{font-size:12px;color:var(--purple2);cursor:pointer;background:none;border:none;font-weight:600}
+.gline{height:1px;background:linear-gradient(to right,transparent,var(--purple-dim),transparent);margin:6px 0}
+.tab-row{display:flex;gap:10px;padding:0 18px 14px}
+.tab-pill{flex:1;padding:10px;border-radius:var(--radius-sm);font-size:12.5px;font-weight:700;
+  cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--muted);
+  transition:all .25s var(--ease);text-align:center;backdrop-filter:blur(8px)}
+.tab-pill.active{background:linear-gradient(135deg,var(--purple),#8a3ffc);color:#fff;
+  border-color:transparent;box-shadow:0 4px 16px rgba(162,91,255,.35)}
 
 /* ── HERO SLIDER ── */
-.hero-wrap{position:relative;width:100%;height:280px;overflow:hidden;background:var(--surface);
-  border-radius:0 0 24px 24px}
-.hero-track{display:flex;height:100%;transition:transform .5s var(--transition)}
-.hero-slide{flex:0 0 100%;position:relative;overflow:hidden}
-.hero-img{width:100%;height:100%;object-fit:cover;opacity:.75;
-  animation:heroZoom 8s var(--transition) infinite alternate}
-@keyframes heroZoom{from{transform:scale(1)}to{transform:scale(1.08)}}
+.hero-wrap{position:relative;width:100%;height:260px;overflow:hidden;background:var(--bg)}
+.hero-track{display:flex;height:100%;transition:transform .5s var(--ease)}
+.hero-slide{flex:0 0 100%;position:relative;overflow:hidden;cursor:pointer}
+.hero-img{width:100%;height:100%;object-fit:cover;opacity:.7;transition:transform 8s ease;transform:scale(1)}
+.hero-slide.active .hero-img{transform:scale(1.08)}
 .hero-overlay{position:absolute;inset:0;
-  background:linear-gradient(to top,var(--bg) 0%,rgba(15,8,23,.4) 45%,transparent 75%),
-              linear-gradient(to bottom,rgba(15,8,23,.5) 0%,transparent 30%);
-  display:flex;flex-direction:column;justify-content:flex-end;padding:18px 18px 28px}
+  background:linear-gradient(to top,var(--bg) 0%,rgba(15,8,23,.3) 50%,transparent 75%),
+             linear-gradient(to bottom,rgba(15,8,23,.4) 0%,transparent 30%);
+  display:flex;flex-direction:column;justify-content:flex-end;padding:16px 18px 28px}
 .hero-badge{display:inline-flex;align-items:center;gap:5px;
   background:linear-gradient(135deg,var(--purple),#ff8aff);
   color:#fff;font-size:10px;font-weight:700;padding:5px 12px;border-radius:20px;
-  margin-bottom:8px;width:fit-content;box-shadow:0 4px 16px rgba(162,91,255,.4);
-  animation:badgePulse 2.5s ease-in-out infinite}
+  margin-bottom:7px;width:fit-content;box-shadow:0 4px 16px rgba(162,91,255,.4);animation:badgePulse 2.5s ease-in-out infinite}
 @keyframes badgePulse{0%,100%{box-shadow:0 4px 16px rgba(162,91,255,.4)}50%{box-shadow:0 4px 24px rgba(162,91,255,.7)}}
-.hero-title{font-family:'Poppins',sans-serif;font-size:22px;font-weight:800;color:#fff;
-  margin-bottom:8px;line-height:1.25;text-shadow:0 2px 12px rgba(0,0,0,.5)}
-.hero-meta{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text2)}
-.hero-status{background:rgba(162,91,255,.18);color:var(--purple2);padding:3px 10px;
+.hero-title{font-family:'Poppins',sans-serif;font-size:21px;font-weight:800;color:#fff;
+  margin-bottom:6px;line-height:1.25;text-shadow:0 2px 12px rgba(0,0,0,.5)}
+.hero-meta{display:flex;align-items:center;gap:10px;font-size:11.5px;color:var(--text2)}
+.hero-type{background:rgba(162,91,255,.2);color:var(--purple2);padding:3px 10px;
   border-radius:12px;font-size:10px;font-weight:700;border:1px solid var(--purple-dim)}
 .hero-dots{position:absolute;bottom:10px;left:18px;display:flex;gap:5px;z-index:2}
-.hero-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.25);
-  transition:all .35s var(--transition);cursor:pointer}
+.hero-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.2);transition:all .35s var(--ease);cursor:pointer}
 .hero-dot.active{width:22px;border-radius:3px;background:linear-gradient(90deg,var(--purple),var(--purple2))}
-
-/* ── CONTINUE WATCHING ── */
-.cw-scroll{display:flex;gap:12px;padding:0 18px;overflow-x:auto;scrollbar-width:none;
-  scroll-snap-type:x proximity}
-.cw-scroll::-webkit-scrollbar{display:none}
-.cw-card{flex:0 0 165px;border-radius:var(--radius);overflow:hidden;background:var(--card);
-  border:1px solid var(--border);cursor:pointer;position:relative;scroll-snap-align:start;
-  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  transition:transform .25s var(--transition),border-color .25s}
-.cw-card:active{transform:scale(.96);border-color:var(--purple-dim)}
-.cw-thumb{width:100%;height:92px;object-fit:cover;display:block;background:var(--border)}
-.cw-bar{position:absolute;bottom:92px;left:0;right:0;height:3px;background:rgba(255,255,255,.08)}
-.cw-prog{height:100%;background:linear-gradient(90deg,var(--purple),var(--purple2));width:38%;
-  box-shadow:0 0 8px var(--purple)}
-.cw-info{padding:9px 10px}
-.cw-ep{font-size:10px;color:var(--purple2);font-weight:700;margin-bottom:3px;
-  display:flex;align-items:center;gap:4px}
-.cw-title{font-size:12px;font-weight:600;color:var(--text);display:-webkit-box;
-  -webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.35}
-
-/* ── EPISODE SCROLL ── */
-.ep-scroll{display:flex;gap:12px;padding:0 18px;overflow-x:auto;scrollbar-width:none;
-  scroll-snap-type:x proximity}
-.ep-scroll::-webkit-scrollbar{display:none}
-.ep-card{flex:0 0 125px;cursor:pointer;scroll-snap-align:start;
-  transition:transform .25s var(--transition)}
-.ep-card:active{transform:scale(.95)}
-.ep-thumb-wrap{position:relative;border-radius:var(--radius-sm);overflow:hidden;
-  width:125px;height:170px;background:var(--card);box-shadow:0 4px 20px rgba(0,0,0,.3);
-  transition:box-shadow .25s}
-.ep-card:active .ep-thumb-wrap{box-shadow:0 4px 24px rgba(162,91,255,.35)}
-.ep-thumb{width:100%;height:100%;object-fit:cover;display:block;
-  transition:transform .4s var(--transition)}
-.ep-thumb-wrap:active .ep-thumb{transform:scale(1.08)}
-.ep-overlay{position:absolute;bottom:0;left:0;right:0;padding:8px;
-  background:linear-gradient(transparent,rgba(15,8,23,.95))}
-.ep-num{font-size:11px;font-weight:700;color:#fff;display:flex;align-items:center;gap:5px}
-.ep-num::before{content:'▶';font-size:8px;color:var(--purple2)}
-.ep-new{position:absolute;top:7px;left:7px;background:linear-gradient(135deg,var(--purple),#ff8aff);
-  color:#fff;font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;
-  box-shadow:0 2px 8px rgba(162,91,255,.5)}
-.ep-title{font-size:11.5px;color:var(--text2);margin-top:7px;display:-webkit-box;
-  -webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.35;font-weight:500}
 
 /* ── GRID 3 ── */
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;padding:0 18px}
-.gc{cursor:pointer;transition:transform .25s var(--transition)}
+.gc{cursor:pointer;transition:transform .2s var(--ease)}
 .gc:active{transform:scale(.95)}
-.gc-wrap{position:relative;border-radius:var(--radius-sm);overflow:hidden;width:100%;
-  aspect-ratio:2/3;background:var(--card);box-shadow:0 4px 16px rgba(0,0,0,.25)}
-.gc-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s var(--transition)}
-.gc:active .gc-img{transform:scale(1.08)}
-.gc-overlay{position:absolute;bottom:0;left:0;right:0;padding:7px;
-  background:linear-gradient(transparent,rgba(15,8,23,.95))}
+.gc-wrap{position:relative;border-radius:var(--radius-sm);overflow:hidden;width:100%;aspect-ratio:2/3;
+  background:var(--card);box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.gc-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s var(--ease)}
+.gc:active .gc-img{transform:scale(1.06)}
+.gc-overlay{position:absolute;bottom:0;left:0;right:0;padding:7px;background:linear-gradient(transparent,rgba(15,8,23,.95))}
 .gc-eps{font-size:10px;font-weight:700;color:#fff}
 .gc-badge{position:absolute;top:6px;left:6px;background:linear-gradient(135deg,var(--purple),#ff8aff);
-  color:#fff;font-size:9px;font-weight:700;padding:3px 7px;border-radius:6px;
-  box-shadow:0 2px 8px rgba(162,91,255,.4)}
+  color:#fff;font-size:9px;font-weight:700;padding:3px 7px;border-radius:6px;box-shadow:0 2px 8px rgba(162,91,255,.4)}
+.gc-badge.anime{background:linear-gradient(135deg,#ff6b6b,#ff8e53)}
+.gc-rating{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.7);
+  color:#ffd700;font-size:9px;font-weight:700;padding:2px 6px;border-radius:6px}
 .gc-title{font-size:11.5px;color:var(--text2);margin-top:7px;display:-webkit-box;
   -webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.35;font-weight:500}
 
@@ -163,177 +115,160 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .pop-list{display:flex;flex-direction:column;gap:10px;padding:0 18px}
 .pop-item{display:flex;gap:14px;align-items:center;padding:12px;background:var(--card);
   border-radius:var(--radius);border:1px solid var(--border);cursor:pointer;
-  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  transition:all .25s var(--transition)}
-.pop-item:active{border-color:var(--purple-dim);transform:scale(.98);background:var(--card2)}
-.pop-rank{font-family:'Poppins',sans-serif;font-size:22px;font-weight:800;
-  color:var(--border2);min-width:34px;text-align:center;transition:color .2s}
+  backdrop-filter:blur(12px);transition:all .25s var(--ease)}
+.pop-item:active{border-color:var(--purple-dim);transform:scale(.98)}
+.pop-rank{font-family:'Poppins',sans-serif;font-size:22px;font-weight:800;color:var(--border2);min-width:34px;text-align:center}
 .pop-rank.t{color:var(--purple);text-shadow:0 0 16px rgba(162,91,255,.5)}
-.pop-img{width:50px;height:70px;object-fit:cover;border-radius:8px;background:var(--border);
-  flex-shrink:0;box-shadow:0 2px 10px rgba(0,0,0,.3)}
+.pop-img{width:50px;height:70px;object-fit:cover;border-radius:8px;background:var(--border);flex-shrink:0}
 .pop-info{flex:1;min-width:0}
 .pop-title{font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:5px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pop-meta{display:flex;gap:7px;align-items:center}
-.pop-ep{font-size:11px;color:var(--muted)}
 .pop-tag{font-size:10px;padding:3px 9px;border-radius:10px;font-weight:700;
   background:rgba(162,91,255,.15);color:var(--purple2);border:1px solid var(--purple-dim)}
+.pop-tag.anime{background:rgba(255,107,107,.12);color:#ff8e8e;border-color:rgba(255,107,107,.3)}
+
+/* ── CONTINUE WATCHING ── */
+.cw-scroll{display:flex;gap:12px;padding:0 18px;overflow-x:auto;scrollbar-width:none}
+.cw-scroll::-webkit-scrollbar{display:none}
+.cw-card{flex:0 0 160px;border-radius:var(--radius);overflow:hidden;background:var(--card);
+  border:1px solid var(--border);cursor:pointer;backdrop-filter:blur(12px);transition:transform .2s var(--ease)}
+.cw-card:active{transform:scale(.96)}
+.cw-thumb{width:100%;height:90px;object-fit:cover;display:block;background:var(--border)}
+.cw-bar{height:3px;background:rgba(255,255,255,.08)}
+.cw-prog{height:100%;background:linear-gradient(90deg,var(--purple),var(--purple2));width:35%;box-shadow:0 0 8px var(--purple)}
+.cw-info{padding:8px 10px}
+.cw-ep{font-size:10px;color:var(--purple2);font-weight:700;margin-bottom:2px}
+.cw-title{font-size:11.5px;font-weight:600;color:var(--text);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3}
 
 /* ── SEARCH ── */
-.search-bar{padding:16px 18px 0;display:flex;gap:10px}
+.s-bar{padding:16px 18px 0;display:flex;gap:10px}
 .s-input{flex:1;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
   padding:13px 16px;color:var(--text);font-size:14px;font-family:'Inter',sans-serif;outline:none;
-  transition:border-color .25s,box-shadow .25s}
+  backdrop-filter:blur(8px);transition:border-color .25s,box-shadow .25s}
 .s-input:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(162,91,255,.15)}
 .s-input::placeholder{color:var(--muted)}
 .s-btn{background:linear-gradient(135deg,var(--purple),#8a3ffc);border:none;border-radius:var(--radius);
-  padding:13px 20px;color:#fff;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;
+  padding:13px 20px;color:#fff;font-weight:700;font-size:13px;cursor:pointer;
   box-shadow:0 4px 16px rgba(162,91,255,.35);transition:transform .2s}
 .s-btn:active{transform:scale(.95)}
+.sm-tabs{display:flex;gap:8px;padding:10px 18px 0}
+.sm-tab{padding:7px 16px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;
+  border:1px solid var(--border);background:var(--card);color:var(--muted);transition:all .25s var(--ease)}
+.sm-tab.active{background:linear-gradient(135deg,var(--purple),#8a3ffc);color:#fff;border-color:transparent}
 
 /* ── SCHEDULE ── */
-.day-tabs-scroll{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:0 18px 14px}
-.day-tabs-scroll::-webkit-scrollbar{display:none}
+.day-tabs-wrap{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:0 18px 14px}
+.day-tabs-wrap::-webkit-scrollbar{display:none}
 .day-tab{flex:0 0 auto;padding:9px 18px;border-radius:24px;font-size:12.5px;font-weight:600;
-  cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--muted);
-  transition:all .25s var(--transition)}
+  cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--muted);transition:all .25s var(--ease)}
 .day-tab.active{background:linear-gradient(135deg,var(--purple),#8a3ffc);color:#fff;
-  border-color:transparent;box-shadow:0 4px 16px rgba(162,91,255,.35)}
-
-/* ── SERIES TABS ── */
-.tab-row{display:flex;gap:10px;padding:0 18px 14px}
-.tab-pill{flex:1;padding:11px;border-radius:var(--radius-sm);font-size:13px;font-weight:700;
-  cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--muted);
-  transition:all .25s var(--transition);text-align:center}
-.tab-pill.active{background:linear-gradient(135deg,var(--purple),#8a3ffc);color:#fff;
   border-color:transparent;box-shadow:0 4px 16px rgba(162,91,255,.35)}
 
 /* ── PAGINATION ── */
 .pagination{display:flex;justify-content:center;gap:12px;padding:20px 18px}
 .page-btn{flex:1;max-width:140px;padding:12px;border-radius:var(--radius-sm);background:var(--card);
   border:1px solid var(--border);color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;
-  transition:all .25s var(--transition);text-align:center}
-.page-btn:active:not(:disabled){transform:scale(.96);border-color:var(--purple-dim)}
+  backdrop-filter:blur(8px);transition:all .25s var(--ease);text-align:center}
+.page-btn:active:not(:disabled){border-color:var(--purple-dim)}
 .page-btn:disabled{opacity:.3;cursor:default}
 
 /* ── DETAIL PAGE ── */
-#detail-page{display:none;position:fixed;inset:0;z-index:300;background:var(--bg);overflow-y:auto;
-  animation:slideUp .35s var(--transition)}
-#detail-page.open{display:block}
-@keyframes slideUp{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
-.dp-back{position:sticky;top:0;z-index:10;background:rgba(15,8,23,.85);backdrop-filter:blur(16px);
-  padding:14px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
+#detail-page{display:none;position:fixed;inset:0;z-index:300;background:var(--bg);overflow-y:auto}
+#detail-page.open{display:block;animation:slideUp .35s var(--ease)}
+@keyframes slideUp{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
+.dp-back{position:sticky;top:0;z-index:10;background:rgba(15,8,23,.88);backdrop-filter:blur(16px);
+  padding:13px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
 .back-btn{background:var(--card);border:1px solid var(--border);border-radius:50%;
   width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;
-  flex-shrink:0;transition:all .25s var(--transition)}
-.back-btn:active{transform:scale(.9) translateX(-2px);border-color:var(--purple-dim)}
+  flex-shrink:0;backdrop-filter:blur(8px);transition:all .25s var(--ease)}
+.back-btn:active{transform:scale(.9) translateX(-2px)}
 .back-btn svg{width:17px;height:17px;stroke:var(--text);fill:none;stroke-width:2}
-.dp-banner{width:100%;height:260px;position:relative;overflow:hidden}
+.dp-banner{width:100%;height:250px;position:relative;overflow:hidden}
 .dp-banner-img{width:100%;height:100%;object-fit:cover}
-.dp-banner::after{content:'';position:absolute;inset:0;
-  background:linear-gradient(to bottom,rgba(15,8,23,.1) 0%,var(--bg) 100%)}
+.dp-banner::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,rgba(15,8,23,.1),var(--bg))}
 .dp-content{padding:0 18px 28px}
 .dp-row{display:flex;gap:16px;margin-top:-55px;position:relative;z-index:2}
 .dp-poster{width:96px;height:136px;object-fit:cover;border-radius:var(--radius);
   border:2px solid var(--purple-dim);flex-shrink:0;background:var(--card);
   box-shadow:0 8px 32px rgba(162,91,255,.25)}
 .dp-meta{padding-top:60px;flex:1;min-width:0}
-.dp-title{font-family:'Poppins',sans-serif;font-size:18px;font-weight:800;color:var(--text);
-  line-height:1.3;margin-bottom:8px}
+.dp-title{font-family:'Poppins',sans-serif;font-size:17px;font-weight:800;color:var(--text);line-height:1.3;margin-bottom:8px}
 .dp-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
 .dp-tag{padding:4px 11px;border-radius:20px;font-size:10.5px;font-weight:700;
   background:rgba(162,91,255,.15);color:var(--purple2);border:1px solid var(--purple-dim)}
-.dp-stats{display:flex;gap:14px;flex-wrap:wrap}
+.dp-stats{display:flex;gap:12px;flex-wrap:wrap}
 .dp-stat{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:4px}
 .dp-stat strong{color:var(--purple2);font-weight:700}
-.dp-synopsis{font-size:13.5px;line-height:1.75;color:var(--text2);margin:18px 0;
+.dp-synopsis{font-size:13.5px;line-height:1.75;color:var(--text2);margin:16px 0;
   padding:14px 16px;background:var(--card);border-radius:var(--radius);
-  border-left:3px solid var(--purple);position:relative}
+  border-left:3px solid var(--purple);backdrop-filter:blur(8px)}
 .ep-list-hd{font-family:'Poppins',sans-serif;font-size:15px;font-weight:700;color:var(--text);
   margin:20px 0 12px;display:flex;align-items:center;gap:8px}
 .ep-list-hd span{font-size:12px;color:var(--muted);font-weight:400;font-family:'Inter',sans-serif}
 .ep-list{display:flex;flex-direction:column;gap:8px}
 .ep-row{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;
   background:var(--card);border-radius:var(--radius-sm);border:1px solid var(--border);cursor:pointer;
-  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  transition:all .25s var(--transition)}
-.ep-row:active{border-color:var(--purple-dim);transform:scale(.98);background:var(--card2)}
+  backdrop-filter:blur(8px);transition:all .25s var(--ease)}
+.ep-row:active{border-color:var(--purple-dim);transform:scale(.98)}
 .ep-row-num{font-size:13.5px;font-weight:700;color:var(--purple2);min-width:58px}
 .ep-row-title{font-size:12.5px;color:var(--text);flex:1}
 .ep-row-date{font-size:10.5px;color:var(--muted);margin-left:8px;flex-shrink:0}
-.ep-row-arr{color:var(--muted);font-size:18px;transition:transform .25s var(--transition)}
+.ep-row-arr{color:var(--muted);font-size:18px;transition:transform .2s}
 .ep-row:active .ep-row-arr{transform:translateX(3px);color:var(--purple2)}
 
 /* ── WATCH PAGE ── */
-#watch-page{display:none;position:fixed;inset:0;z-index:400;background:#000;overflow-y:auto;
-  animation:slideUp .35s var(--transition)}
-#watch-page.open{display:block}
-.wp-back{position:sticky;top:0;z-index:10;background:rgba(0,0,0,.85);backdrop-filter:blur(16px);
-  padding:14px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #2a1a3f}
-#player-wrap{width:100%;aspect-ratio:16/9;background:#0a0512;position:relative}
+#watch-page{display:none;position:fixed;inset:0;z-index:400;background:#000;overflow-y:auto}
+#watch-page.open{display:block;animation:slideUp .35s var(--ease)}
+.wp-back{position:sticky;top:0;z-index:10;background:rgba(0,0,0,.88);backdrop-filter:blur(16px);
+  padding:13px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #2a1a3f}
+#player-wrap{width:100%;aspect-ratio:16/9;background:#0a0512}
 #player-frame{width:100%;height:100%;border:none;display:block}
-.wp-info{padding:16px 18px 0}
+.wp-info{padding:14px 18px 0}
 .wp-title{font-family:'Poppins',sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px}
 .wp-sub{font-size:12.5px;color:var(--purple2);font-weight:600}
-.srv-section{padding:16px 18px}
-.srv-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;
-  margin-bottom:10px;font-weight:700}
+.srv-section{padding:14px 18px}
+.srv-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;font-weight:700}
 .srv-list{display:flex;flex-wrap:wrap;gap:8px}
 .srv-btn{padding:9px 16px;border-radius:var(--radius-sm);border:1px solid var(--border);
-  background:var(--card);color:var(--text2);font-size:12.5px;cursor:pointer;font-weight:600;
-  transition:all .25s var(--transition)}
-.srv-btn.active{border-color:transparent;color:#fff;
-  background:linear-gradient(135deg,var(--purple),#8a3ffc);box-shadow:0 4px 16px rgba(162,91,255,.35)}
+  background:var(--card);color:var(--text2);font-size:12.5px;cursor:pointer;font-weight:600;transition:all .25s var(--ease)}
+.srv-btn.active{border-color:transparent;color:#fff;background:linear-gradient(135deg,var(--purple),#8a3ffc);box-shadow:0 4px 16px rgba(162,91,255,.35)}
 .wp-nav{display:flex;gap:10px;padding:10px 18px 28px}
 .ep-nav-btn{flex:1;padding:13px;border-radius:var(--radius-sm);background:var(--card);
-  border:1px solid var(--border);color:var(--text2);font-size:12.5px;cursor:pointer;
-  text-align:center;font-weight:600;transition:all .25s var(--transition)}
-.ep-nav-btn:active:not(:disabled){transform:scale(.96);border-color:var(--purple-dim);color:var(--purple2)}
+  border:1px solid var(--border);color:var(--text2);font-size:12.5px;cursor:pointer;text-align:center;font-weight:600;transition:all .25s var(--ease)}
+.ep-nav-btn:active:not(:disabled){border-color:var(--purple-dim)}
 .ep-nav-btn:disabled{opacity:.3;cursor:default}
 
-/* ── LOADER / EMPTY ── */
+/* ── LOADER/EMPTY ── */
 .loader{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:50px;gap:14px}
 .spinner{width:38px;height:38px;border-radius:50%;border:3px solid var(--border);
-  border-top-color:var(--purple);border-right-color:var(--purple2);
-  animation:spin .7s linear infinite;box-shadow:0 0 20px rgba(162,91,255,.25)}
+  border-top-color:var(--purple);border-right-color:var(--purple2);animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .ldr-txt{font-size:12.5px;color:var(--muted);font-weight:500}
 .empty{text-align:center;padding:50px 24px;color:var(--muted);font-size:13.5px}
 .empty-ico{font-size:40px;margin-bottom:14px;opacity:.6}
-
-/* ── SKELETON ── */
-.skel{background:linear-gradient(90deg,var(--card) 25%,var(--card2) 50%,var(--card) 75%);
-  background-size:200% 100%;animation:shimmer 1.6s infinite;border-radius:var(--radius-sm)}
-@keyframes shimmer{to{background-position:-200% 0}}
-.skel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;padding:0 18px}
-.skel-card{aspect-ratio:2/3;border-radius:var(--radius-sm)}
 
 /* ── TOAST ── */
 #toast{position:fixed;bottom:calc(var(--nav-h)+16px);left:50%;
   transform:translateX(-50%) translateY(20px) scale(.9);background:var(--card2);
   border:1px solid var(--purple-dim);color:var(--text);padding:10px 20px;
   border-radius:var(--radius-sm);font-size:12.5px;font-weight:500;opacity:0;
-  transition:all .35s var(--transition);z-index:999;pointer-events:none;white-space:nowrap;
-  box-shadow:0 8px 32px rgba(162,91,255,.2)}
+  transition:all .35s var(--ease);z-index:999;pointer-events:none;white-space:nowrap;
+  box-shadow:0 8px 32px rgba(162,91,255,.2);backdrop-filter:blur(8px)}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
 </style>
 </head>
 <body>
-
 <canvas id="galaxy-canvas"></canvas>
 <div id="app-wrap">
+
 <nav id="topnav">
   <div>
     <div class="logo">ClaudeNime</div>
-    <span class="logo-sub">DONGHUA STREAMING</span>
+    <span class="logo-sub">DONGHUA & ANIME</span>
   </div>
-  <div style="display:flex;gap:10px">
-    <div class="icon-btn" onclick="showSection('schedule')">
-      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-    </div>
-    <div class="icon-btn" onclick="goSearch()">
-      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    </div>
+  <div class="icon-btn" onclick="goSearch()">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
   </div>
 </nav>
 
@@ -341,66 +276,58 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 
 <!-- ══ BERANDA ══ -->
 <section id="sec-home" class="section active">
-  <div class="hero-wrap" id="hero-wrap"><div class="hero-track" id="hero-track"></div><div class="hero-dots" id="hero-dots"></div></div>
+  <!-- Hero -->
+  <div class="hero-wrap" id="hero-wrap">
+    <div class="hero-track" id="hero-track"></div>
+    <div class="hero-dots" id="hero-dots"></div>
+  </div>
 
+  <!-- Lanjutkan Nonton -->
   <div id="cw-section" style="display:none">
     <div class="sh"><span class="sh-title"><span class="dot"></span>Lanjutkan Nonton</span><button class="sh-more" onclick="clearHistory()">Hapus</button></div>
     <div class="cw-scroll" id="cw-list"></div>
+    <div class="gline"></div>
   </div>
 
-  <div class="sh"><span class="sh-title"><span class="dot"></span>Episode Terbaru</span></div>
-  <div class="ep-scroll" id="home-latest"><div class="loader"><div class="spinner"></div></div></div>
+  <!-- Donghua Terbaru -->
+  <div class="sh"><span class="sh-title"><span class="dot"></span>Donghua Terbaru</span><button class="sh-more" onclick="showSection('donghua')">Lihat Semua ›</button></div>
+  <div class="grid3" id="home-donghua"><div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div></div>
 
-  <div class="gline"></div>
+  <div class="gline" style="margin-top:14px"></div>
 
-  <div class="sh"><span class="sh-title"><span class="dot"></span>Rekomendasi Fantasy</span></div>
-  <div class="grid3" id="home-fantasy"><div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div></div>
+  <!-- Anime Terbaru -->
+  <div class="sh"><span class="sh-title"><span class="dot"></span>Anime Terbaru</span><button class="sh-more" onclick="showSection('anime')">Lihat Semua ›</button></div>
+  <div class="grid3" id="home-anime"><div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div></div>
 
-  <div class="gline"></div>
+  <div class="gline" style="margin-top:14px"></div>
 
-  <div class="sh"><span class="sh-title"><span class="dot"></span>Sedang Populer</span></div>
+  <!-- Populer -->
+  <div class="sh"><span class="sh-title"><span class="dot"></span>Donghua Populer</span></div>
   <div class="pop-list" id="home-popular"><div class="loader"><div class="spinner"></div></div></div>
 
-  <div class="gline"></div>
+  <div class="gline" style="margin-top:14px"></div>
 
-  <div class="sh"><span class="sh-title"><span class="dot"></span>Pendatang Baru</span><button class="sh-more" onclick="showSection('series');switchSeries('new')">Lihat Semua ›</button></div>
-  <div class="ep-scroll" id="home-new" style="padding-bottom:8px"><div class="loader"><div class="spinner"></div></div></div>
+  <!-- Pendatang Baru -->
+  <div class="sh"><span class="sh-title"><span class="dot"></span>Series Baru</span><button class="sh-more" onclick="showSection('donghua')">Lihat Semua ›</button></div>
+  <div class="grid3" id="home-new" style="padding-bottom:10px"><div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div></div>
 </section>
 
-<!-- ══ CARI ══ -->
-<section id="sec-search" class="section">
-  <div class="search-bar">
-    <input class="s-input" id="s-input" type="text" placeholder="Cari judul donghua..."/>
-    <button class="s-btn" onclick="doSearch()">Cari</button>
-  </div>
-  <div id="search-results" style="padding-top:16px">
-    <div class="empty"><div class="empty-ico">🔍</div>Ketik judul lalu tekan Cari</div>
-  </div>
-</section>
-
-<!-- ══ SERIES ══ -->
-<section id="sec-series" class="section">
-  <div class="sh"><span class="sh-title" id="series-title"><span class="dot"></span>Series Terbaru</span></div>
-  <div class="tab-row">
-    <button class="tab-pill active" id="tab-new" onclick="switchSeries('new')">Terbaru</button>
-    <button class="tab-pill" id="tab-done" onclick="switchSeries('completed')">Tamat</button>
-  </div>
-  <div class="grid3" id="series-grid"><div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div></div>
-  <div class="pagination">
-    <button class="page-btn" id="page-prev" onclick="changePage(-1)" disabled>‹ Sebelumnya</button>
-    <button class="page-btn" id="page-next" onclick="changePage(1)">Selanjutnya ›</button>
-  </div>
-</section>
-
-<!-- ══ JADWAL ══ -->
 <!-- ══ DONGHUA ══ -->
 <section id="sec-donghua" class="section">
-  <div class="sh"><span class="sh-title"><span class="dot"></span>Series Terbaru</span></div>
+  <!-- Hero Donghua -->
+  <div class="hero-wrap" id="dh-hero-wrap">
+    <div class="hero-track" id="dh-hero-track"></div>
+    <div class="hero-dots" id="dh-hero-dots"></div>
+  </div>
+  <div class="sh" style="padding-top:14px"><span class="sh-title"><span class="dot"></span>Episode Terbaru</span></div>
+  <div class="grid3" id="dh-latest"><div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div></div>
+  <div class="gline" style="margin-top:14px"></div>
+  <div class="sh"><span class="sh-title"><span class="dot"></span>Semua Series</span></div>
   <div class="tab-row">
     <button class="tab-pill active" id="dtab-new" onclick="switchDonghua('new')">Terbaru</button>
     <button class="tab-pill" id="dtab-done" onclick="switchDonghua('completed')">Tamat</button>
   </div>
-  <div class="grid3" id="donghua-grid"><div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div></div>
+  <div class="grid3" id="dh-grid"><div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div></div>
   <div class="pagination">
     <button class="page-btn" id="dpage-prev" onclick="changeDPage(-1)" disabled>‹ Prev</button>
     <button class="page-btn" id="dpage-next" onclick="changeDPage(1)">Next ›</button>
@@ -409,28 +336,51 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 
 <!-- ══ ANIME ══ -->
 <section id="sec-anime" class="section">
-  <div class="sh"><span class="sh-title"><span class="dot"></span>Anime</span></div>
+  <!-- Hero Anime -->
+  <div class="hero-wrap" id="an-hero-wrap">
+    <div class="hero-track" id="an-hero-track"></div>
+    <div class="hero-dots" id="an-hero-dots"></div>
+  </div>
+  <div class="sh" style="padding-top:14px"><span class="sh-title"><span class="dot"></span>Anime Terbaru</span></div>
+  <div class="grid3" id="an-latest"><div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div></div>
+  <div class="gline" style="margin-top:14px"></div>
+  <div class="sh"><span class="sh-title"><span class="dot"></span>Semua Anime</span></div>
   <div class="tab-row">
-    <button class="tab-pill active" id="atab-home" onclick="switchAnime('home')">Terbaru</button>
-    <button class="tab-pill" id="atab-ongoing" onclick="switchAnime('ongoing')">Ongoing</button>
+    <button class="tab-pill active" id="atab-ongoing" onclick="switchAnime('ongoing')">Ongoing</button>
     <button class="tab-pill" id="atab-done" onclick="switchAnime('completed')">Tamat</button>
   </div>
-  <div class="grid3" id="anime-grid"><div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div></div>
+  <div class="grid3" id="an-grid"><div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div></div>
   <div class="pagination">
     <button class="page-btn" id="apage-prev" onclick="changeAPage(-1)" disabled>‹ Prev</button>
     <button class="page-btn" id="apage-next" onclick="changeAPage(1)">Next ›</button>
   </div>
 </section>
 
+<!-- ══ CARI ══ -->
+<section id="sec-search" class="section">
+  <div class="s-bar">
+    <input class="s-input" id="s-input" type="text" placeholder="Cari donghua atau anime..."/>
+    <button class="s-btn" onclick="doSearch()">Cari</button>
+  </div>
+  <div class="sm-tabs">
+    <button class="sm-tab active" id="smode-dh" onclick="setSearchMode('donghua')">Donghua</button>
+    <button class="sm-tab" id="smode-an" onclick="setSearchMode('anime')">Anime</button>
+  </div>
+  <div id="search-results" style="padding-top:14px">
+    <div class="empty"><div class="empty-ico">🔍</div>Ketik lalu tekan Cari</div>
+  </div>
+</section>
+
+<!-- ══ JADWAL ══ -->
 <section id="sec-schedule" class="section">
   <div class="sh"><span class="sh-title"><span class="dot"></span>Jadwal Tayang</span></div>
-  <div class="day-tabs-scroll" id="day-tabs"></div>
-  <div class="grid3" id="sch-grid" style="padding-bottom:8px">
+  <div class="day-tabs-wrap" id="day-tabs"></div>
+  <div class="grid3" id="sch-grid" style="padding-bottom:10px">
     <div class="loader" style="grid-column:1/-1"><div class="spinner"></div><div class="ldr-txt">Memuat jadwal...</div></div>
   </div>
 </section>
 
-</div>
+</div><!-- #app -->
 
 <nav id="botnav">
   <button class="bnav active" id="bn-home" onclick="showSection('home')">
@@ -454,6 +404,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
     Jadwal
   </button>
 </nav>
+
+</div><!-- /#app-wrap -->
 
 <!-- DETAIL -->
 <div id="detail-page">
@@ -483,447 +435,312 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
     <button class="ep-nav-btn" id="btn-prev-ep" onclick="navEp('prev')" disabled>‹ Ep Sebelumnya</button>
     <button class="ep-nav-btn" id="btn-next-ep" onclick="navEp('next')" disabled>Ep Selanjutnya ›</button>
   </div>
-</div><!-- /#app-wrap -->
+</div>
 
 <div id="toast"></div>
 
 <script>
 // ── GALAXY BACKGROUND ──────────────────────────────────────────────────────
 (function(){
-  const C=document.getElementById('galaxy-canvas');
-  const ctx=C.getContext('2d');
+  const C=document.getElementById('galaxy-canvas'),ctx=C.getContext('2d');
   let W,H,cx,cy,scrollY=0,targetScrollY=0,mouseX=0,mouseY=0;
-
   function resize(){W=C.width=window.innerWidth;H=C.height=window.innerHeight;cx=W/2;cy=H/2}
-  resize();
-  window.addEventListener('resize',resize);
+  resize();window.addEventListener('resize',resize);
   window.addEventListener('scroll',()=>{targetScrollY=window.pageYOffset},{passive:true});
-  document.addEventListener('mousemove',e=>{mouseX=(e.clientX/W-0.5)*2;mouseY=(e.clientY/H-0.5)*2});
-
-  // Purple-themed color palette
-  function getPurpleColor(t,b){
-    let r,g,bl;
-    if(t>0.85){r=200*b;g=150*b;bl=255*b}
-    else if(t>0.65){r=162*b;g=91*b;bl=255*b}
-    else if(t>0.45){r=120*b;g=50*b;bl=220*b}
-    else if(t>0.25){r=80*b;g=30*b;bl=180*b}
+  document.addEventListener('mousemove',e=>{mouseX=(e.clientX/W-.5)*2;mouseY=(e.clientY/H-.5)*2});
+  function getColor(t,b){let r,g,bl;
+    if(t>.85){r=200*b;g=150*b;bl=255*b}
+    else if(t>.65){r=162*b;g=91*b;bl=255*b}
+    else if(t>.45){r=120*b;g=50*b;bl=220*b}
+    else if(t>.25){r=80*b;g=30*b;bl=180*b}
     else{r=50*b;g=20*b;bl=120*b}
     return{r:Math.floor(Math.min(255,r)),g:Math.floor(Math.min(255,g)),b:Math.floor(Math.min(255,bl))}
   }
-
-  const RING_COUNT=5,PPR=220,JET=50,particles=[];
-
-  // Accretion disk rings
-  for(let ring=0;ring<RING_COUNT;ring++){
-    const bR=50+ring*40,th=10+ring*5,sp=(0.003+Math.random()*0.002)/(1+ring*0.4);
-    for(let i=0;i<PPR;i++){
-      const a=(i/PPR)*Math.PI*2+Math.random()*0.3,r=bR+(Math.random()-0.5)*th,yO=(Math.random()-0.5)*(3+ring*1.5);
-      particles.push({ring,angle:a,r,yOff:yO,size:0.4+Math.random()*(1.1-ring*0.1),speed:sp,temp:1-ring/RING_COUNT,brightness:0.4+Math.random()*0.6,type:'disk'})
-    }
-  }
-
-  // Polar jets
-  for(let i=0;i<JET;i++){
-    const dir=i<JET/2?-1:1,dist=15+Math.random()*160,spread=(Math.random()-0.5)*18*(dist/180);
-    particles.push({dir,dist,spread,angle:Math.random()*Math.PI*2,rotSpeed:0.01+Math.random()*0.02,size:0.4+Math.random()*0.9,brightness:0.3+Math.random()*0.5,type:'jet'})
-  }
-
-  // Halo stars (purple tinted)
-  for(let i=0;i<300;i++){
-    const a=Math.random()*Math.PI*2,r=80+Math.random()*400;
-    particles.push({angle:a,r,yOff:(Math.random()-0.5)*220,size:0.2+Math.random()*0.7,speed:0.0004+Math.random()*0.0008,brightness:0.08+Math.random()*0.2,type:'halo'})
-  }
-
-  // Distant stars background
-  const stars=[];
-  for(let i=0;i<150;i++) stars.push({x:Math.random(),y:Math.random(),s:Math.random()*1.2,o:Math.random()*0.3+0.05});
-
+  const particles=[];
+  for(let ring=0;ring<5;ring++){const bR=50+ring*40,sp=(0.003+Math.random()*.002)/(1+ring*.4);
+    for(let i=0;i<220;i++){const a=(i/220)*Math.PI*2+Math.random()*.3,r=bR+(Math.random()-.5)*(10+ring*5),yO=(Math.random()-.5)*(3+ring*1.5);
+      particles.push({ring,angle:a,r,yOff:yO,size:.4+Math.random()*(1.1-ring*.1),speed:sp,temp:1-ring/5,brightness:.4+Math.random()*.6,type:'disk'})}}
+  for(let i=0;i<50;i++){const dir=i<25?-1:1,dist=15+Math.random()*160,spread=(Math.random()-.5)*18*(dist/180);
+    particles.push({dir,dist,spread,angle:Math.random()*Math.PI*2,rotSpeed:.01+Math.random()*.02,size:.4+Math.random()*.9,brightness:.3+Math.random()*.5,type:'jet'})}
+  for(let i=0;i<300;i++){const a=Math.random()*Math.PI*2,r=80+Math.random()*400;
+    particles.push({angle:a,r,yOff:(Math.random()-.5)*220,size:.2+Math.random()*.7,speed:.0004+Math.random()*.0008,brightness:.08+Math.random()*.2,type:'halo'})}
+  const stars=[];for(let i=0;i<150;i++)stars.push({x:Math.random(),y:Math.random(),s:Math.random()*1.2,o:Math.random()*.25+.05});
   function rY(x,y,z,a){const c=Math.cos(a),s=Math.sin(a);return{x:x*c-z*s,y,z:x*s+z*c}}
   function rX(x,y,z,a){const c=Math.cos(a),s=Math.sin(a);return{x,y:y*c-z*s,z:y*s+z*c}}
-
   function drawCore(){
-    // Event horizon glow (purple)
-    const g1=ctx.createRadialGradient(cx,cy,0,cx,cy,110);
-    g1.addColorStop(0,'rgba(0,0,0,1)');
-    g1.addColorStop(0.12,'rgba(0,0,0,0.95)');
-    g1.addColorStop(0.25,'rgba(90,30,150,0.08)');
-    g1.addColorStop(0.45,'rgba(162,91,255,0.04)');
-    g1.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.beginPath();ctx.arc(cx,cy,110,0,Math.PI*2);ctx.fillStyle=g1;ctx.fill();
-    // Black core
+    const g=ctx.createRadialGradient(cx,cy,0,cx,cy,110);
+    g.addColorStop(0,'rgba(0,0,0,1)');g.addColorStop(.12,'rgba(0,0,0,.95)');
+    g.addColorStop(.25,'rgba(90,30,150,.08)');g.addColorStop(.45,'rgba(162,91,255,.04)');g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.beginPath();ctx.arc(cx,cy,110,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
     ctx.beginPath();ctx.arc(cx,cy,20,0,Math.PI*2);ctx.fillStyle='#000';ctx.fill();
-    // Event horizon ring
-    ctx.beginPath();ctx.arc(cx,cy,24,0,Math.PI*2);ctx.strokeStyle='rgba(162,91,255,0.25)';ctx.lineWidth=1.5;ctx.stroke();
-    ctx.beginPath();ctx.arc(cx,cy,28,0,Math.PI*2);ctx.strokeStyle='rgba(195,137,255,0.1)';ctx.lineWidth=2;ctx.stroke();
+    ctx.beginPath();ctx.arc(cx,cy,24,0,Math.PI*2);ctx.strokeStyle='rgba(162,91,255,.25)';ctx.lineWidth=1.5;ctx.stroke();
   }
-
   function animate(){
-    scrollY+=(targetScrollY-scrollY)*0.05;
-    ctx.clearRect(0,0,W,H);
-
-    // Draw background stars
+    scrollY+=(targetScrollY-scrollY)*.05;ctx.clearRect(0,0,W,H);
     for(const s of stars){ctx.beginPath();ctx.arc(s.x*W,s.y*H,s.s,0,Math.PI*2);ctx.fillStyle=`rgba(180,160,255,${s.o})`;ctx.fill()}
-
-    const sa=scrollY*0.0006,ax=0.82+mouseY*0.04+Math.sin(sa*0.4)*0.12,ay=sa+mouseX*0.06,ps=780;
-    const pj=[];
-
-    for(const p of particles){
-      let x3,y3,z3,col,al;
-      if(p.type==='disk'){
-        p.angle+=p.speed;
-        x3=Math.cos(p.angle)*p.r;z3=Math.sin(p.angle)*p.r;y3=p.yOff;
-        col=getPurpleColor(p.temp,p.brightness);al=p.brightness*0.7
-      } else if(p.type==='jet'){
-        p.angle+=p.rotSpeed;
-        x3=Math.cos(p.angle)*p.spread;z3=Math.sin(p.angle)*p.spread;y3=p.dir*p.dist;
-        col={r:Math.floor(162*p.brightness),g:Math.floor(91*p.brightness),b:255};al=p.brightness*0.45*(1-p.dist/180)
-      } else {
-        p.angle+=p.speed;
-        x3=Math.cos(p.angle)*p.r;z3=Math.sin(p.angle)*p.r;y3=p.yOff;
-        col={r:100,g:60,b:180};al=p.brightness*0.25
-      }
-      let r1=rY(x3,y3,z3,ay),r2=rX(r1.x,r1.y,r1.z,ax);
-      const sc=ps/(ps+r2.z);
-      pj.push({sx:cx+r2.x*sc,sy:cy+r2.y*sc,sz:r2.z,ss:Math.max(0.2,p.size*sc),col,al:al*Math.max(0.1,sc)})
-    }
-
+    const sa=scrollY*.0006,ax=.82+mouseY*.04+Math.sin(sa*.4)*.12,ay=sa+mouseX*.06,ps=780,pj=[];
+    for(const p of particles){let x3,y3,z3,col,al;
+      if(p.type==='disk'){p.angle+=p.speed;x3=Math.cos(p.angle)*p.r;z3=Math.sin(p.angle)*p.r;y3=p.yOff;col=getColor(p.temp,p.brightness);al=p.brightness*.7}
+      else if(p.type==='jet'){p.angle+=p.rotSpeed;x3=Math.cos(p.angle)*p.spread;z3=Math.sin(p.angle)*p.spread;y3=p.dir*p.dist;col={r:Math.floor(162*p.brightness),g:Math.floor(91*p.brightness),b:255};al=p.brightness*.45*(1-p.dist/180)}
+      else{p.angle+=p.speed;x3=Math.cos(p.angle)*p.r;z3=Math.sin(p.angle)*p.r;y3=p.yOff;col={r:100,g:60,b:180};al=p.brightness*.25}
+      let r1=rY(x3,y3,z3,ay),r2=rX(r1.x,r1.y,r1.z,ax);const sc=ps/(ps+r2.z);
+      pj.push({sx:cx+r2.x*sc,sy:cy+r2.y*sc,sz:r2.z,ss:Math.max(.2,p.size*sc),col,al:al*Math.max(.1,sc)})}
     pj.sort((a,b)=>b.sz-a.sz);
-
-    for(const p of pj) if(p.sz>0) drP(p);
-    drawCore();
-    for(const p of pj) if(p.sz<=0) drP(p);
-
+    for(const p of pj)if(p.sz>0)drP(p);drawCore();for(const p of pj)if(p.sz<=0)drP(p);
     requestAnimationFrame(animate)
   }
-
-  function drP(p){
-    const{sx,sy,ss,col,al}=p;
-    if(sx<-60||sx>W+60||sy<-60||sy>H+60) return;
-    ctx.beginPath();ctx.arc(sx,sy,ss,0,Math.PI*2);
-    ctx.fillStyle=`rgba(${col.r},${col.g},${col.b},${al})`;ctx.fill();
-    if(ss>0.9&&al>0.2){ctx.beginPath();ctx.arc(sx,sy,ss*3,0,Math.PI*2);ctx.fillStyle=`rgba(${col.r},${col.g},${col.b},${al*0.07})`;ctx.fill()}
-  }
-
+  function drP(p){const{sx,sy,ss,col,al}=p;if(sx<-60||sx>W+60||sy<-60||sy>H+60)return;
+    ctx.beginPath();ctx.arc(sx,sy,ss,0,Math.PI*2);ctx.fillStyle=`rgba(${col.r},${col.g},${col.b},${al})`;ctx.fill();
+    if(ss>.9&&al>.2){ctx.beginPath();ctx.arc(sx,sy,ss*3,0,Math.PI*2);ctx.fillStyle=`rgba(${col.r},${col.g},${col.b},${al*.07})`;ctx.fill()}}
   animate();
 })();
-// ───────────────────────────────────────────────────────────────────────────
-const DH_API = "/api/donghub";
-const GM_API = "/api/gomunime";
-const IMG = u => u ? `/api/img?url=${encodeURIComponent(u)}` : "";
-const HIST_KEY = "hp_history";
 
-let scheduleLoaded=false, scheduleData={}, currentDay="";
-let seriesMode="new", seriesPage=1;
-let donghuaMode="new", donghuaPage=1, donghuaLoaded=false;
-let animeMode="home", animePage=1, animeLoaded=false;
-let heroTimer=null, heroIdx=0, heroItems=[];
+// ── CORE ──────────────────────────────────────────────────────────────────
+const DH_API="/api/donghub", GM_API="/api/gomunime";
+const IMG=u=>u?`/api/img?url=${encodeURIComponent(u)}`:"";
+const HIST_KEY="cn_history";
 
-function slug(url){ return url?url.replace(/^https?:\/\/[^/]+\//,"").replace(/\/$/,""):""; }
-function toast(m){ const t=document.getElementById("toast"); t.textContent=m; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2200); }
-async function apiGet(base,p){ const r=await fetch(`${base}?${new URLSearchParams(p)}`); if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); }
+let scheduleLoaded=false,scheduleData={},currentDay="";
+let dhMode="new",dhPage=1,dhLoaded=false;
+let anMode="ongoing",anPage=1,anLoaded=false;
+let searchMode="donghua",watchData=null;
+let heroTimer=null,heroIdx=0,heroItems=[];
+let dhHeroTimer=null,dhHeroIdx=0,dhHeroItems=[];
+let anHeroTimer=null,anHeroIdx=0,anHeroItems=[];
+
+async function apiGet(base,p){const r=await fetch(`${base}?${new URLSearchParams(p)}`);if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}
+function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2200)}
+function slug(url){return url?url.replace(/^https?:\/\/[^/]+\//,"").replace(/\/$/,""):""}
 
 // ── HISTORY ──
-function getHist(){ try{return JSON.parse(localStorage.getItem(HIST_KEY)||"[]")}catch{return[]} }
-function saveHist(h){ localStorage.setItem(HIST_KEY,JSON.stringify(h)) }
-function addHist(slugVal,epTitle,seriesTitle,thumb){
+function getHist(){try{return JSON.parse(localStorage.getItem(HIST_KEY)||"[]")}catch{return[]}}
+function saveHist(h){localStorage.setItem(HIST_KEY,JSON.stringify(h))}
+function addHist(slugVal,epTitle,seriesTitle,thumb,type){
   let h=getHist().filter(x=>x.slug!==slugVal);
-  h.unshift({slug:slugVal,epTitle,seriesTitle,thumb,ts:Date.now()});
+  h.unshift({slug:slugVal,epTitle,seriesTitle,thumb,type:type||"donghua",ts:Date.now()});
   saveHist(h.slice(0,12));
 }
-function clearHistory(){ saveHist([]); renderCW(); }
+function clearHistory(){saveHist([]);renderCW()}
 function renderCW(){
-  const h=getHist(); const sec=document.getElementById("cw-section"); const list=document.getElementById("cw-list");
-  if(!h.length){sec.style.display="none";return;}
+  const h=getHist(),sec=document.getElementById("cw-section"),list=document.getElementById("cw-list");
+  if(!h.length){sec.style.display="none";return}
   sec.style.display="block";
   list.innerHTML=h.map(i=>`
-    <div class="cw-card" onclick="openWatch('${encodeURIComponent(i.slug)}')">
-      <img class="cw-thumb" src="${IMG(i.thumb)}" onerror="this.style.background='var(--border)'" loading="lazy"/>
+    <div class="cw-card" onclick="${i.type==='anime'?`openAnimeWatch('${encodeURIComponent(i.slug)}','${encodeURIComponent(i.seriesTitle||"")}')`:`openWatch('${encodeURIComponent(i.slug)}')`}">
+      <img class="cw-thumb" src="${IMG(i.thumb)}" onerror="this.style.background='var(--card2)'" loading="lazy"/>
       <div class="cw-bar"><div class="cw-prog"></div></div>
       <div class="cw-info"><div class="cw-ep">${i.epTitle||""}</div><div class="cw-title">${i.seriesTitle||""}</div></div>
     </div>`).join("");
 }
 
 // ── HERO ──
-function buildHero(items){
-  heroItems=items;
-  document.getElementById("hero-track").innerHTML=items.map(i=>`
-    <div class="hero-slide" onclick="openDetail('${encodeURIComponent(slug(i.url))}')">
-      <img class="hero-img" src="${IMG(i.thumbnail||i.image)}" onerror="this.style.background='var(--surface)'" loading="lazy"/>
+function buildHero(trackId,dotsId,items,timerRef,clickFn,badgeLabel){
+  const track=document.getElementById(trackId),dots=document.getElementById(dotsId);
+  if(!track||!dots)return null;
+  track.innerHTML=items.map(i=>`
+    <div class="hero-slide">
+      <img class="hero-img" src="${IMG(i.thumbnail||i.poster||i.image)}" onerror="this.style.background='var(--surface)'" loading="lazy"/>
       <div class="hero-overlay">
-        <div class="hero-badge">✦ Populer</div>
+        <div class="hero-badge">✦ ${badgeLabel||"Populer"}</div>
         <div class="hero-title">${i.title}</div>
-        <div class="hero-meta"><span class="hero-status">ONGOING</span><span style="color:var(--muted)">•</span><span>Donghua</span></div>
+        <div class="hero-meta"><span class="hero-type">${badgeLabel||"DONGHUA"}</span><span style="color:var(--muted)">•</span><span>${i.status||"Ongoing"}</span></div>
       </div>
     </div>`).join("");
-  document.getElementById("hero-dots").innerHTML=items.map((_,i)=>`<div class="hero-dot ${i===0?'active':''}" onclick="event.stopPropagation();goHero(${i})"></div>`).join("");
-  startHeroTimer();
+  dots.innerHTML=items.map((_,i)=>`<div class="hero-dot ${i===0?'active':''}" onclick="goHeroTo('${trackId}','${dotsId}',${i})"></div>`).join("");
+  track.querySelectorAll(".hero-slide").forEach((s,i)=>s.onclick=()=>clickFn(items[i]));
+  return setInterval(()=>{
+    const idx=((parseInt(track.dataset.idx||0)+1)%items.length);
+    track.dataset.idx=idx;goHeroTo(trackId,dotsId,idx);
+  },4500);
 }
-function goHero(i){
-  heroIdx=i;
-  document.getElementById("hero-track").style.transform=`translateX(-${i*100}%)`;
-  document.querySelectorAll(".hero-dot").forEach((d,idx)=>d.classList.toggle("active",idx===i));
+function goHeroTo(trackId,dotsId,i){
+  const track=document.getElementById(trackId);if(!track)return;
+  track.style.transform=`translateX(-${i*100}%)`;track.dataset.idx=i;
+  document.querySelectorAll(`#${dotsId} .hero-dot`).forEach((d,idx)=>d.classList.toggle("active",idx===i));
 }
-function startHeroTimer(){ clearInterval(heroTimer); heroTimer=setInterval(()=>{heroIdx=(heroIdx+1)%heroItems.length;goHero(heroIdx);},4500); }
 
 // ── SECTION NAV ──
 function showSection(name){
   document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
   document.querySelectorAll(".bnav").forEach(b=>b.classList.remove("active"));
   document.getElementById("sec-"+name).classList.add("active");
-  const bn=document.getElementById("bn-"+name);
-  if(bn) bn.classList.add("active");
-  if(name==="schedule"&&!scheduleLoaded) loadSchedule();
-  if(name==="donghua"&&!donghuaLoaded){ donghuaLoaded=true; loadDonghuaGrid(); }
-  if(name==="anime"&&!animeLoaded){ animeLoaded=true; loadAnimeGrid(); }
-  if(name==="home") renderCW();
+  const bn=document.getElementById("bn-"+name);if(bn)bn.classList.add("active");
+  if(name==="schedule"&&!scheduleLoaded)loadSchedule();
+  if(name==="donghua"&&!dhLoaded){dhLoaded=true;loadDonghuaSection()}
+  if(name==="anime"&&!anLoaded){anLoaded=true;loadAnimeSection()}
+  if(name==="home")renderCW();
   window.scrollTo({top:0,behavior:"smooth"});
 }
-function goSearch(){ showSection("search"); setTimeout(()=>document.getElementById("s-input").focus(),150); }
+function goSearch(){showSection("search");setTimeout(()=>document.getElementById("s-input").focus(),150)}
 
 // ── HOME ──
 async function loadHome(){
   try{
-    const [homeData,newData]=await Promise.all([
+    const [homeData,newData,animeData]=await Promise.all([
       apiGet(DH_API,{cmd:"home"}),
-      apiGet(DH_API,{cmd:"new-series",page:1})
+      apiGet(DH_API,{cmd:"new-series",page:1}),
+      apiGet(GM_API,{cmd:"home"})
     ]);
     const pop=homeData.popular_series||[];
-    if(pop.length) buildHero(pop.slice(0,8));
-    renderEpScroll(document.getElementById("home-latest"),homeData.latest_episodes||[],"watch");
+    if(pop.length){
+      heroTimer=buildHero("hero-track","hero-dots",pop.slice(0,8),heroTimer,
+        i=>openDetail(encodeURIComponent(slug(i.url))),"DONGHUA");
+    }
+    // Donghua terbaru - grid 3 col, 9 items
+    const latest=homeData.latest_episodes||[];
+    renderGrid3(document.getElementById("home-donghua"),latest.slice(0,9),"dh");
+    // Anime terbaru - grid 3 col, 9 items
+    const animeItems=(animeData.data||[]).slice(0,9);
+    renderGrid3(document.getElementById("home-anime"),animeItems,"anime");
+    // Populer
     renderPopular(pop);
-    const kw=["perfect","immortal","heaven","god","spirit","dragon","sword","martial","dao","cultivat","divine","soul","battle","renegade","tales","coiling"];
-    const fan=(homeData.latest_episodes||[]).filter(i=>kw.some(k=>i.title.toLowerCase().includes(k))).slice(0,9);
-    renderGrid3(document.getElementById("home-fantasy"),fan.length?fan:(homeData.latest_episodes||[]).slice(0,9));
-    renderEpScroll(document.getElementById("home-new"),(newData.result||[]).slice(0,12),"detail");
-  }catch(e){ document.getElementById("home-latest").innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div>Gagal memuat data</div>`; }
+    // Series baru
+    const newItems=(newData.result||[]).slice(0,9);
+    renderGrid3(document.getElementById("home-new"),newItems,"dh");
+  }catch(e){
+    document.getElementById("home-donghua").innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal memuat</div>`;
+  }
   renderCW();
 }
 
 // ── RENDER HELPERS ──
-function renderEpScroll(el,items,mode){
-  mode=mode||"detail";
-  if(!items.length){el.innerHTML=`<div class="empty">Tidak ada data</div>`;return;}
-  el.innerHTML=items.map(i=>{
-    const clickFn = mode==="watch"
-      ? `openWatch('${encodeURIComponent(slug(i.url))}','${encodeURIComponent(i.title)}','${encodeURIComponent(i.thumbnail||"")}')`
-      : `openDetail('${encodeURIComponent(slug(i.url))}')`;
-    return `
-    <div class="ep-card" onclick="${clickFn}">
-      <div class="ep-thumb-wrap">
-        <img class="ep-thumb" src="${IMG(i.thumbnail)}" onerror="this.style.background='var(--card2)'" loading="lazy"/>
-        <div class="ep-new">NEW</div>
-        <div class="ep-overlay"><div class="ep-num">${i.episode||""}</div></div>
-      </div>
-      <div class="ep-title">${i.title}</div>
-    </div>`;
-  }).join("");
+function renderGrid3(el,items,type){
+  if(!items||!items.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada data</div>`;return}
+  el.innerHTML=items.map(i=>gcHTML(i,type)).join("");
 }
 
-function renderGrid3(el,items){
-  if(!items.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada data</div>`;return;}
-  el.innerHTML=items.map(i=>gcHTML(i)).join("");
-}
-function gcHTML(i){
-  return `<div class="gc" onclick="openDetail('${encodeURIComponent(slug(i.url))}')">
+function gcHTML(i,type){
+  const isDH=type==="dh"||type==="donghua";
+  const clickFn=isDH
+    ?`openDetail('${encodeURIComponent(slug(i.url||i.link||""))}')`
+    :`openAnimeDetail('${encodeURIComponent(slug(i.link||i.url||""))}')`;
+  const thumb=i.thumbnail||i.poster||i.image||"";
+  const ep=i.episode||i.status||"";
+  const rating=i.rating||(i.score?`★ ${i.score}`:"");
+  return `<div class="gc" onclick="${clickFn}">
     <div class="gc-wrap">
-      <img class="gc-img" src="${IMG(i.thumbnail)}" onerror="this.style.background='var(--card2)'" loading="lazy"/>
-      <div class="gc-badge">${i.status||"NEW"}</div>
-      <div class="gc-overlay"><div class="gc-eps">${i.episode||""}</div></div>
+      <img class="gc-img" src="${IMG(thumb)}" onerror="this.style.background='var(--card2)'" loading="lazy"/>
+      <div class="gc-badge ${isDH?'':'anime'}">${isDH?"NEW":"ANIME"}</div>
+      ${rating?`<div class="gc-rating">${rating}</div>`:""}
+      ${ep?`<div class="gc-overlay"><div class="gc-eps">${ep}</div></div>`:""}
     </div>
-    <div class="gc-title">${i.title}</div>
+    <div class="gc-title">${i.title||""}</div>
   </div>`;
 }
 
 function renderPopular(items){
   const el=document.getElementById("home-popular");
-  if(!items.length){el.innerHTML="";return;}
+  if(!items||!items.length){el.innerHTML="";return}
   el.innerHTML=items.map((i,idx)=>`
     <div class="pop-item" onclick="openDetail('${encodeURIComponent(slug(i.url))}')">
       <span class="pop-rank ${idx<3?'t':''}">${String(idx+1).padStart(2,"0")}</span>
       <img class="pop-img" src="${IMG(i.thumbnail)}" onerror="this.style.background='var(--card2)'" loading="lazy"/>
       <div class="pop-info">
         <div class="pop-title">${i.title}</div>
-        <div class="pop-meta"><span class="pop-tag">ONGOING</span><span class="pop-ep">Donghua</span></div>
+        <div class="pop-meta"><span class="pop-tag">ONGOING</span><span style="font-size:11px;color:var(--muted)">Donghua</span></div>
       </div>
     </div>`).join("");
 }
 
+// ── DONGHUA SECTION ──
+async function loadDonghuaSection(){
+  try{
+    const homeData=await apiGet(DH_API,{cmd:"home"});
+    const pop=homeData.popular_series||[];
+    if(pop.length){
+      dhHeroTimer=buildHero("dh-hero-track","dh-hero-dots",pop.slice(0,8),dhHeroTimer,
+        i=>openDetail(encodeURIComponent(slug(i.url))),"DONGHUA");
+    }
+    renderGrid3(document.getElementById("dh-latest"),(homeData.latest_episodes||[]).slice(0,9),"dh");
+  }catch{}
+  loadDHGrid();
+}
+async function loadDHGrid(){
+  const el=document.getElementById("dh-grid");
+  el.innerHTML=`<div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div>`;
+  try{
+    const d=await apiGet(DH_API,{cmd:dhMode==="new"?"new-series":"completed",page:dhPage});
+    if(!d.result||!d.result.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada data</div>`;return}
+    el.innerHTML=d.result.map(i=>gcHTML(i,"dh")).join("");
+    document.getElementById("dpage-prev").disabled=dhPage<=1;
+    document.getElementById("dpage-next").disabled=!d.has_next;
+  }catch{el.innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal</div>`}
+}
+function switchDonghua(mode){dhMode=mode;dhPage=1;
+  document.getElementById("dtab-new").classList.toggle("active",mode==="new");
+  document.getElementById("dtab-done").classList.toggle("active",mode==="completed");
+  loadDHGrid()}
+function changeDPage(dir){dhPage=Math.max(1,dhPage+dir);loadDHGrid();window.scrollTo({top:0,behavior:"smooth"})}
+
+// ── ANIME SECTION ──
+async function loadAnimeSection(){
+  try{
+    const d=await apiGet(GM_API,{cmd:"home"});
+    const items=d.data||[];
+    if(items.length){
+      anHeroTimer=buildHero("an-hero-track","an-hero-dots",
+        items.slice(0,8).map(i=>({...i,thumbnail:i.poster})),anHeroTimer,
+        i=>openAnimeDetail(encodeURIComponent(slug(i.link||""))),"ANIME");
+    }
+    renderGrid3(document.getElementById("an-latest"),items.slice(0,9),"anime");
+  }catch{}
+  loadAnGrid();
+}
+async function loadAnGrid(){
+  const el=document.getElementById("an-grid");
+  el.innerHTML=`<div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div>`;
+  try{
+    const d=await apiGet(GM_API,{cmd:anMode,page:anPage});
+    const items=d.data||[];
+    if(!items.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada data</div>`;return}
+    el.innerHTML=items.map(i=>gcHTML(i,"anime")).join("");
+    document.getElementById("apage-prev").disabled=anPage<=1;
+    document.getElementById("apage-next").disabled=items.length<12;
+  }catch{el.innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal</div>`}
+}
+function switchAnime(mode){anMode=mode;anPage=1;
+  document.getElementById("atab-ongoing").classList.toggle("active",mode==="ongoing");
+  document.getElementById("atab-done").classList.toggle("active",mode==="completed");
+  loadAnGrid()}
+function changeAPage(dir){anPage=Math.max(1,anPage+dir);loadAnGrid();window.scrollTo({top:0,behavior:"smooth"})}
+
 // ── SEARCH ──
-document.getElementById("s-input").addEventListener("keydown",e=>{if(e.key==="Enter")doSearch();});
+document.getElementById("s-input").addEventListener("keydown",e=>{if(e.key==="Enter")doSearch()});
+function setSearchMode(m){searchMode=m;
+  document.getElementById("smode-dh").classList.toggle("active",m==="donghua");
+  document.getElementById("smode-an").classList.toggle("active",m==="anime")}
 async function doSearch(){
-  const q=document.getElementById("s-input").value.trim(); if(!q) return;
+  const q=document.getElementById("s-input").value.trim();if(!q)return;
   const el=document.getElementById("search-results");
   el.innerHTML=`<div class="loader"><div class="spinner"></div><div class="ldr-txt">Mencari "${q}"...</div></div>`;
   try{
-    const d=await apiGet(DH_API,{cmd:"search",query:q});
-    if(!d.result||!d.result.length){el.innerHTML=`<div class="empty"><div class="empty-ico">🔍</div>Tidak ada hasil untuk "<b>${q}</b>"</div>`;return;}
-    el.innerHTML=`<div class="grid3">${d.result.map(i=>gcHTML(i)).join("")}</div>`;
-  }catch{el.innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div>Gagal mencari</div>`;}
+    if(searchMode==="donghua"){
+      const d=await apiGet(DH_API,{cmd:"search",query:q});
+      if(!d.result||!d.result.length){el.innerHTML=`<div class="empty"><div class="empty-ico">🔍</div>Tidak ada hasil</div>`;return}
+      el.innerHTML=`<div class="grid3" style="padding-top:8px">${d.result.map(i=>gcHTML(i,"dh")).join("")}</div>`;
+    } else {
+      const d=await apiGet(GM_API,{cmd:"search",query:q});
+      if(!d.data||!d.data.length){el.innerHTML=`<div class="empty"><div class="empty-ico">🔍</div>Tidak ada hasil</div>`;return}
+      el.innerHTML=`<div class="grid3" style="padding-top:8px">${d.data.map(i=>gcHTML(i,"anime")).join("")}</div>`;
+    }
+  }catch{el.innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div>Gagal mencari</div>`}
 }
 
-// ── SERIES ──
-async function loadSeriesGrid(){
-  const el=document.getElementById("series-grid");
-  el.innerHTML=`<div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div>`;
-  try{
-    const d=await apiGet(DH_API,{cmd:seriesMode==="new"?"new-series":"completed",page:seriesPage});
-    if(!d.result||!d.result.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada data</div>`;return;}
-    el.innerHTML=d.result.map(i=>gcHTML(i)).join("");
-    document.getElementById("page-prev").disabled=seriesPage<=1;
-    document.getElementById("page-next").disabled=!d.has_next;
-  }catch{el.innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal memuat</div>`;}
-}
-function switchSeries(mode){
-  seriesMode=mode; seriesPage=1;
-  document.getElementById("tab-new").classList.toggle("active",mode==="new");
-  document.getElementById("tab-done").classList.toggle("active",mode==="completed");
-  document.getElementById("series-title").innerHTML=`<span class="dot"></span>${mode==="new"?"Series Terbaru":"Series Tamat"}`;
-  loadSeriesGrid();
-}
-function changePage(dir){ seriesPage=Math.max(1,seriesPage+dir); loadSeriesGrid(); window.scrollTo({top:0,behavior:"smooth"}); }
-
-// ── DONGHUA SECTION ──
-async function loadDonghuaGrid(){
-  const el=document.getElementById("donghua-grid");
-  el.innerHTML=`<div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div>`;
-  try{
-    const cmd=donghuaMode==="new"?"new-series":"completed";
-    const d=await apiGet(DH_API,{cmd,page:donghuaPage});
-    if(!d.result||!d.result.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada data</div>`;return;}
-    el.innerHTML=d.result.map(i=>gcHTML(i)).join("");
-    document.getElementById("dpage-prev").disabled=donghuaPage<=1;
-    document.getElementById("dpage-next").disabled=!d.has_next;
-  }catch{el.innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal memuat</div>`;}
-}
-function switchDonghua(mode){
-  donghuaMode=mode; donghuaPage=1;
-  document.getElementById("dtab-new").classList.toggle("active",mode==="new");
-  document.getElementById("dtab-done").classList.toggle("active",mode==="completed");
-  loadDonghuaGrid();
-}
-function changeDPage(dir){ donghuaPage=Math.max(1,donghuaPage+dir); loadDonghuaGrid(); window.scrollTo({top:0,behavior:"smooth"}); }
-
-// ── ANIME SECTION ──
-async function loadAnimeGrid(){
-  const el=document.getElementById("anime-grid");
-  el.innerHTML=`<div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div>`;
-  try{
-    let d;
-    if(animeMode==="home") d=await apiGet(GM_API,{cmd:"home"});
-    else if(animeMode==="ongoing") d=await apiGet(GM_API,{cmd:"ongoing",page:animePage});
-    else d=await apiGet(GM_API,{cmd:"completed",page:animePage});
-    const items=d.data||[];
-    if(!items.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada data</div>`;return;}
-    el.innerHTML=items.map(i=>animeCardHTML(i)).join("");
-    document.getElementById("apage-prev").disabled=animePage<=1||animeMode==="home";
-    document.getElementById("apage-next").disabled=animeMode==="home"||items.length<12;
-  }catch(e){el.innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal memuat: ${e.message}</div>`;}
-}
-function switchAnime(mode){
-  animeMode=mode; animePage=1;
-  ["home","ongoing","done"].forEach(m=>{ const el=document.getElementById("atab-"+m); if(el) el.classList.remove("active"); });
-  const map={home:"atab-home",ongoing:"atab-ongoing",completed:"atab-done"};
-  const btn=document.getElementById(map[mode]||"atab-home");
-  if(btn) btn.classList.add("active");
-  loadAnimeGrid();
-}
-function changeAPage(dir){ animePage=Math.max(1,animePage+dir); loadAnimeGrid(); window.scrollTo({top:0,behavior:"smooth"}); }
-
-function animeCardHTML(i){
-  const slugVal=i.link?i.link.replace(/^https?:\/\/[^/]+\//,"").replace(/\/$/,""):"";
-  return `<div class="gc" onclick="openAnimeDetail('${encodeURIComponent(slugVal)}')">
-    <div class="gc-wrap">
-      <img class="gc-img" src="${IMG(i.poster)}" onerror="this.style.background='var(--card2)'" loading="lazy"/>
-      <div class="gc-badge">ANIME</div>
-    </div>
-    <div class="gc-title">${i.title||slugVal}</div>
-  </div>`;
-}
-
-// ── ANIME DETAIL ──
-async function openAnimeDetail(encodedSlug){
-  const s=decodeURIComponent(encodedSlug);
-  const page=document.getElementById("detail-page");
-  const body=document.getElementById("dp-body");
-  document.getElementById("dp-back-title").textContent=s;
-  body.innerHTML=`<div class="loader" style="padding:70px"><div class="spinner"></div><div class="ldr-txt">Memuat anime...</div></div>`;
-  page.classList.add("open"); document.body.style.overflow="hidden";
-  try{
-    const d=await apiGet(GM_API,{cmd:"detail",slug:s});
-    if(d.error){body.innerHTML=`<div class="empty"><div class="empty-ico">😞</div>${d.error}</div>`;return;}
-    document.getElementById("dp-back-title").textContent=d.title||s;
-    const eps=d.episodeList||[];
-    body.innerHTML=`
-      <div class="dp-banner"><img class="dp-banner-img" src="${IMG(d.poster)}" onerror="this.style.display='none'"/></div>
-      <div class="dp-content">
-        <div class="dp-row">
-          <img class="dp-poster" src="${IMG(d.poster)}" onerror="this.style.background='var(--card2)'"/>
-          <div class="dp-meta">
-            <div class="dp-title">${d.title||s}</div>
-            <div class="dp-tags"><span class="dp-tag">Anime</span>${d.status?`<span class="dp-tag">${d.status}</span>`:""}</div>
-            <div class="dp-stats">
-              ${d.rating?`<div class="dp-stat">⭐ <strong>${d.rating}</strong></div>`:""}
-              ${d.totalEpisodes?`<div class="dp-stat">🎬 <strong>${d.totalEpisodes} Ep</strong></div>`:""}
-            </div>
-          </div>
-        </div>
-        ${d.description?`<div class="dp-synopsis">${d.description.substring(0,300)}...</div>`:""}
-        <div class="ep-list-hd">Daftar Episode <span>(${eps.length})</span></div>
-        <div class="ep-list">
-          ${eps.map(e=>`
-            <div class="ep-row" onclick="openAnimeWatch('${encodeURIComponent(e.url)}','${encodeURIComponent(d.title||s)}')">
-              <span class="ep-row-num">Ep ${e.episode}</span>
-              <span class="ep-row-title">${d.title||s} Episode ${e.episode}</span>
-              <span class="ep-row-arr">›</span>
-            </div>`).join("")}
-        </div>
-      </div>`;
-  }catch(e){body.innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div>Gagal memuat: ${e.message}</div>`;}
-}
-
-// ── ANIME WATCH ──
-async function openAnimeWatch(encodedUrl, encodedTitle){
-  const epUrl=decodeURIComponent(encodedUrl);
-  const title=decodeURIComponent(encodedTitle);
-  const page=document.getElementById("watch-page");
-  document.getElementById("wp-back-title").textContent=title;
-  document.getElementById("wp-ep-title").textContent=title;
-  document.getElementById("wp-series-title").textContent="Anime";
-  document.getElementById("player-frame").src="";
-  document.getElementById("srv-list").innerHTML=`<div class="loader" style="width:100%"><div class="spinner"></div></div>`;
-  document.getElementById("btn-prev-ep").disabled=true;
-  document.getElementById("btn-next-ep").disabled=true;
-  page.classList.add("open");
-  try{
-    const d=await apiGet(GM_API,{cmd:"watch",url:epUrl});
-    const iframes=d.iframes||[];
-    const isValidUrl=u=>typeof u==="string"&&/^https?:\/\//i.test(u.trim());
-    const valid=iframes.filter(isValidUrl);
-    if(valid.length) document.getElementById("player-frame").src=valid[0];
-    const sl=document.getElementById("srv-list");
-    sl.innerHTML=valid.length
-      ?valid.map((u,i)=>`<button class="srv-btn ${i===0?'active':''}" onclick="switchSrv(this,'${encodeURIComponent(u)}')">${"Mirror "+(i+1)}</button>`).join("")
-      :`<div style="color:var(--muted);font-size:12.5px;padding:6px 0">⚠️ Tidak ada mirror tersedia</div>`;
-  }catch(e){
-    document.getElementById("srv-list").innerHTML=`<div style="color:var(--muted);font-size:12.5px;padding:6px 0">⚠️ Gagal: ${e.message}</div>`;
-  }
-}
-
-
+// ── SCHEDULE ──
 async function loadSchedule(){
   scheduleLoaded=true;
   try{
     const d=await apiGet(DH_API,{cmd:"schedule"});
     scheduleData=d.result||{};
     const days=Object.keys(scheduleData);
-    if(!days.length){document.getElementById("sch-grid").innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada jadwal</div>`;return;}
+    if(!days.length){document.getElementById("sch-grid").innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada jadwal</div>`;return}
     const todayMap=["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
     const todayName=todayMap[new Date().getDay()];
     currentDay=days.includes(todayName)?todayName:days[0];
-    document.getElementById("day-tabs").innerHTML=days.map(day=>`
-      <button class="day-tab ${day===currentDay?'active':''}" onclick="switchDay('${day}')">${day}</button>`).join("");
+    document.getElementById("day-tabs").innerHTML=days.map(day=>
+      `<button class="day-tab ${day===currentDay?'active':''}" onclick="switchDay('${day}')">${day}</button>`).join("");
     renderSchDay(currentDay);
-  }catch{document.getElementById("sch-grid").innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal memuat jadwal</div>`;}
+  }catch{document.getElementById("sch-grid").innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal</div>`}
 }
 function switchDay(day){
   currentDay=day;
@@ -933,21 +750,22 @@ function switchDay(day){
 function renderSchDay(day){
   const items=scheduleData[day]||[];
   const el=document.getElementById("sch-grid");
-  if(!items.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada jadwal hari ini</div>`;return;}
-  el.innerHTML=items.map(i=>gcHTML(i)).join("");
+  if(!items.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada jadwal</div>`;return}
+  el.innerHTML=items.map(i=>gcHTML(i,"dh")).join("");
 }
 
-// ── DETAIL ──
+// ── DONGHUA DETAIL ──
 async function openDetail(encodedSlug){
   const s=decodeURIComponent(encodedSlug);
   const page=document.getElementById("detail-page");
   const body=document.getElementById("dp-body");
   document.getElementById("dp-back-title").textContent=s;
-  body.innerHTML=`<div class="loader" style="padding:70px"><div class="spinner"></div><div class="ldr-txt">Memuat detail...</div></div>`;
-  page.classList.add("open"); document.body.style.overflow="hidden";
+  body.innerHTML=`<div class="loader" style="padding:70px"><div class="spinner"></div><div class="ldr-txt">Memuat...</div></div>`;
+  page.classList.add("open");document.body.style.overflow="hidden";
   try{
     const d=await apiGet(DH_API,{cmd:"detail",slug:s});
-    if(d.error){body.innerHTML=`<div class="empty"><div class="empty-ico">😞</div>${d.error}</div>`;return;}
+    if(d.error){body.innerHTML=`<div class="empty"><div class="empty-ico">😞</div>${d.error}</div>`;return}
+    if(d.not_series){body.innerHTML=`<div class="empty"><div class="empty-ico">📄</div>Konten ini bukan series</div>`;return}
     document.getElementById("dp-back-title").textContent=d.title;
     const eps=d.result||[];
     body.innerHTML=`
@@ -966,9 +784,7 @@ async function openDetail(encodedSlug){
           </div>
         </div>
         ${d.synopsis?`<div class="dp-synopsis">${d.synopsis}</div>`:""}
-        ${d.not_series
-          ? `<div class="empty"><div class="empty-ico">📄</div>Konten ini bukan series donghua dan tidak memiliki episode.</div>`
-          : `<div class="ep-list-hd">Daftar Episode <span>(${eps.length})</span></div>
+        <div class="ep-list-hd">Daftar Episode <span>(${eps.length})</span></div>
         <div class="ep-list">
           ${eps.map(e=>`
             <div class="ep-row" onclick="openWatch('${encodeURIComponent(slug(e.url))}','${encodeURIComponent(d.title)}','${encodeURIComponent(d.poster||"")}')">
@@ -977,14 +793,55 @@ async function openDetail(encodedSlug){
               <span class="ep-row-date">${e.release_date||""}</span>
               <span class="ep-row-arr">›</span>
             </div>`).join("")}
-        </div>`}
+        </div>
       </div>`;
-  }catch{body.innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div>Gagal memuat detail</div>`;}
+  }catch{body.innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div>Gagal memuat</div>`}
 }
-function closeDetail(){ document.getElementById("detail-page").classList.remove("open"); document.body.style.overflow=""; }
+function closeDetail(){document.getElementById("detail-page").classList.remove("open");document.body.style.overflow=""}
 
-// ── WATCH ──
-async function openWatch(encodedSlug, encodedSeries, encodedThumb){
+// ── ANIME DETAIL ──
+async function openAnimeDetail(encodedSlug){
+  const s=decodeURIComponent(encodedSlug);
+  const page=document.getElementById("detail-page");
+  const body=document.getElementById("dp-body");
+  document.getElementById("dp-back-title").textContent=s;
+  body.innerHTML=`<div class="loader" style="padding:70px"><div class="spinner"></div><div class="ldr-txt">Memuat anime...</div></div>`;
+  page.classList.add("open");document.body.style.overflow="hidden";
+  try{
+    const d=await apiGet(GM_API,{cmd:"detail",slug:s});
+    if(d.error){body.innerHTML=`<div class="empty"><div class="empty-ico">😞</div>${d.error}</div>`;return}
+    document.getElementById("dp-back-title").textContent=d.title||s;
+    const eps=d.episodeList||[];
+    body.innerHTML=`
+      <div class="dp-banner"><img class="dp-banner-img" src="${IMG(d.poster)}" onerror="this.style.display='none'"/></div>
+      <div class="dp-content">
+        <div class="dp-row">
+          <img class="dp-poster" src="${IMG(d.poster)}" onerror="this.style.background='var(--card2)'"/>
+          <div class="dp-meta">
+            <div class="dp-title">${d.title||s}</div>
+            <div class="dp-tags"><span class="dp-tag anime" style="background:rgba(255,107,107,.12);color:#ff8e8e;border-color:rgba(255,107,107,.3)">Anime</span>${d.status?`<span class="dp-tag">${d.status}</span>`:""}</div>
+            <div class="dp-stats">
+              ${d.rating?`<div class="dp-stat">⭐ <strong>${d.rating}</strong></div>`:""}
+              ${d.totalEpisodes?`<div class="dp-stat">🎬 <strong>${d.totalEpisodes} Ep</strong></div>`:""}
+            </div>
+          </div>
+        </div>
+        ${d.description?`<div class="dp-synopsis">${d.description.substring(0,350)}...</div>`:""}
+        <div class="ep-list-hd">Daftar Episode <span>(${eps.length})</span></div>
+        <div class="ep-list">
+          ${eps.map(e=>`
+            <div class="ep-row" onclick="openAnimeWatch('${encodeURIComponent(e.url)}','${encodeURIComponent(d.title||s)}')">
+              <span class="ep-row-num">Ep ${e.episode}</span>
+              <span class="ep-row-title">${(d.title||s)} Episode ${e.episode}</span>
+              <span class="ep-row-arr">›</span>
+            </div>`).join("")}
+        </div>
+      </div>`;
+  }catch(e){body.innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div>Gagal: ${e.message}</div>`}
+}
+
+// ── DONGHUA WATCH ──
+async function openWatch(encodedSlug,encodedSeries,encodedThumb){
   const s=decodeURIComponent(encodedSlug);
   const seriesTitle=encodedSeries?decodeURIComponent(encodedSeries):"";
   const thumb=encodedThumb?decodeURIComponent(encodedThumb):"";
@@ -1002,38 +859,62 @@ async function openWatch(encodedSlug, encodedSeries, encodedThumb){
     watchData=d;
     document.getElementById("wp-back-title").textContent=d.title;
     document.getElementById("wp-ep-title").textContent=d.title;
-    const isValidUrl=u=>typeof u==="string"&&/^https?:\/\//i.test(u.trim());
-    const url=isValidUrl(d.video_url)?d.video_url:(d.servers||[]).map(s=>s.url).find(isValidUrl);
-    document.getElementById("player-frame").src=url||"";
+    const isValid=u=>typeof u==="string"&&/^https?:\/\//i.test(u.trim());
+    const url=isValid(d.video_url)?d.video_url:(d.servers||[]).map(s=>s.url).find(isValid);
+    if(url)document.getElementById("player-frame").src=url;
     const allSrv=[];
-    if(isValidUrl(d.video_url)) allSrv.push({name:"Default",url:d.video_url});
-    (d.servers||[]).forEach(sv=>{if(isValidUrl(sv.url)&&sv.url!==d.video_url) allSrv.push(sv);});
+    if(isValid(d.video_url))allSrv.push({name:"Default",url:d.video_url});
+    (d.servers||[]).forEach(sv=>{if(isValid(sv.url)&&sv.url!==d.video_url)allSrv.push(sv)});
     const sl=document.getElementById("srv-list");
     sl.innerHTML=allSrv.length
-      ?allSrv.map((sv,i)=>`<button class="srv-btn ${(sv.url===url)?'active':''}" onclick="switchSrv(this,'${encodeURIComponent(sv.url)}')">${sv.name||"Mirror "+(i+1)}</button>`).join("")
-      :`<div style="color:var(--muted);font-size:12.5px;padding:6px 0">⚠️ Tidak ada mirror tersedia untuk episode ini</div>`;
+      ?allSrv.map((sv,i)=>`<button class="srv-btn ${sv.url===url?'active':''}" onclick="switchSrv(this,'${encodeURIComponent(sv.url)}')">${sv.name||"Mirror "+(i+1)}</button>`).join("")
+      :`<div style="color:var(--muted);font-size:12.5px;padding:6px 0">⚠️ Tidak ada mirror tersedia</div>`;
     document.getElementById("btn-prev-ep").disabled=!d.prev_episode;
     document.getElementById("btn-next-ep").disabled=!d.next_episode;
-    if(seriesTitle) addHist(s,d.title,seriesTitle,thumb);
-  }catch{
-    document.getElementById("srv-list").innerHTML=`<div style="color:var(--muted);font-size:12.5px;padding:6px 0">⚠️ Gagal memuat player</div>`;
-  }
+    if(seriesTitle)addHist(s,d.title,seriesTitle,thumb,"donghua");
+  }catch{document.getElementById("srv-list").innerHTML=`<div style="color:var(--muted);font-size:12.5px">⚠️ Gagal memuat player</div>`}
 }
-let watchData=null;
+
+// ── ANIME WATCH ──
+async function openAnimeWatch(encodedUrl,encodedTitle){
+  const epUrl=decodeURIComponent(encodedUrl);
+  const title=encodedTitle?decodeURIComponent(encodedTitle):"";
+  const page=document.getElementById("watch-page");
+  document.getElementById("wp-back-title").textContent=title;
+  document.getElementById("wp-ep-title").textContent=title;
+  document.getElementById("wp-series-title").textContent="Anime";
+  document.getElementById("player-frame").src="";
+  document.getElementById("srv-list").innerHTML=`<div class="loader" style="width:100%"><div class="spinner"></div></div>`;
+  document.getElementById("btn-prev-ep").disabled=true;
+  document.getElementById("btn-next-ep").disabled=true;
+  watchData=null;
+  page.classList.add("open");
+  try{
+    const d=await apiGet(GM_API,{cmd:"watch",url:epUrl});
+    const iframes=(d.iframes||[]).filter(u=>/^https?:\/\//i.test(u));
+    if(iframes.length)document.getElementById("player-frame").src=iframes[0];
+    const sl=document.getElementById("srv-list");
+    sl.innerHTML=iframes.length
+      ?iframes.map((u,i)=>`<button class="srv-btn ${i===0?'active':''}" onclick="switchSrv(this,'${encodeURIComponent(u)}')">${"Mirror "+(i+1)}</button>`).join("")
+      :`<div style="color:var(--muted);font-size:12.5px;padding:6px 0">⚠️ Tidak ada mirror</div>`;
+    addHist(epUrl,title,title,"","anime");
+  }catch{document.getElementById("srv-list").innerHTML=`<div style="color:var(--muted);font-size:12.5px">⚠️ Gagal memuat</div>`}
+}
+
 function switchSrv(btn,encodedUrl){
   document.querySelectorAll(".srv-btn").forEach(b=>b.classList.remove("active"));
   btn.classList.add("active");
   document.getElementById("player-frame").src=decodeURIComponent(encodedUrl);
 }
 function navEp(dir){
-  if(!watchData) return;
+  if(!watchData)return;
   const url=dir==="next"?watchData.next_episode:watchData.prev_episode;
-  if(url) openWatch(encodeURIComponent(slug(url)));
+  if(url)openWatch(encodeURIComponent(slug(url)));
 }
 function closeWatch(){
   document.getElementById("watch-page").classList.remove("open");
   document.getElementById("player-frame").src="";
-  watchData=null; renderCW();
+  watchData=null;renderCW();
 }
 
 loadHome();
