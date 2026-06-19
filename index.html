@@ -348,8 +348,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
   <div class="sh"><span class="sh-title"><span class="dot"></span>Semua Anime</span></div>
   <div class="tab-row">
     <button class="tab-pill active" id="atab-ongoing" onclick="switchAnime('ongoing')">Ongoing</button>
-    <button class="tab-pill" id="atab-batchs" onclick="switchAnime('batchs')">Batch ⬇️</button>
-    <button class="tab-pill" id="atab-movies" onclick="switchAnime('movies')">Movies 🎬</button>
+    <button class="tab-pill" id="atab-complete" onclick="switchAnime('complete')">Complete ✅</button>
   </div>
   <div class="grid3" id="an-grid"><div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div></div>
   <div class="pagination">
@@ -540,7 +539,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 
 // ── ENDPOINTS & GLOBALS ────────────────────────────────────────────────────
 const DH_API   = "/api/donghub";    // Donghua
-const NN_API   = "/api/neonime";    // Anime browse + search fallback
+const NN_API   = "/api/neonime";    // Anime search fallback only (sering 403 di server)
 const OD_API   = "/api/otakudesu"; // Anime search/watch/schedule PRIMARY (OtakuDesu)
 const IMG = u => u ? `/api/img?url=${encodeURIComponent(u)}` : "";
 const HIST_KEY = "cn_history";
@@ -698,12 +697,12 @@ async function loadHome(){
   }catch{
     document.getElementById("home-new").innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal</div>`;
   }
-  // Anime: Neonime (browse source)
+  // Anime: OtakuDesu (browse source)
   try{
-    const d=await apiGet(NN_API,{cmd:"home"});
-    const items=nnNorm(d.items||[]).slice(0,9);
+    const res=await apiGet(OD_API,{cmd:"home"});
+    const items=nnNorm((res.data&&res.data.items)||[]).slice(0,9);
     if(!items.length) throw new Error("empty");
-    renderGrid3(document.getElementById("home-anime"),items,"neonime");
+    renderGrid3(document.getElementById("home-anime"),items,"od");
   }catch{
     document.getElementById("home-anime").innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal memuat</div>`;
   }
@@ -784,16 +783,16 @@ function switchDonghua(mode){
 }
 function changeDPage(dir){dhPage=Math.max(1,dhPage+dir);loadDHGrid();window.scrollTo({top:0,behavior:"smooth"})}
 
-// ── ANIME SECTION — Neonime (Browse Source) ─────────────────────────────────
+// ── ANIME SECTION — OtakuDesu (Browse Source) ───────────────────────────────
 async function loadAnimeSection(){
   // Hero & Latest
   try{
-    const d=await apiGet(NN_API,{cmd:"home"});
-    const items=nnNorm(d.items||[]);
+    const res=await apiGet(OD_API,{cmd:"home"});
+    const items=nnNorm((res.data&&res.data.items)||[]);
     if(!items.length) throw new Error("empty");
     anHeroTimer=buildHero("an-hero-track","an-hero-dots",items.slice(0,8),anHeroTimer,
-      i=>openNNDetail(encodeURIComponent(nnSlug(i.url))),"NEONIME");
-    renderGrid3(document.getElementById("an-latest"),items.slice(0,9),"neonime");
+      i=>openODDetail(encodeURIComponent(odSlug(i.url)),encodeURIComponent(i.thumbnail||"")),"OTAKUDESU");
+    renderGrid3(document.getElementById("an-latest"),items.slice(0,9),"od");
   }catch{
     document.getElementById("an-latest").innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal memuat</div>`;
   }
@@ -804,18 +803,18 @@ async function loadAnGrid(){
   const el=document.getElementById("an-grid");
   el.innerHTML=`<div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div>`;
   try{
-    const d=await apiGet(NN_API,{cmd:anMode,page:anPage});
-    const items=nnNorm(d.items||[]);
+    const res=await apiGet(OD_API,{cmd:anMode,page:anPage});
+    const items=nnNorm((res.data&&res.data.items)||[]);
     if(!items.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada data</div>`;return}
-    el.innerHTML=items.map(i=>gcHTML(i,"neonime")).join("");
+    el.innerHTML=items.map(i=>gcHTML(i,"od")).join("");
     document.getElementById("apage-prev").disabled=anPage<=1;
-    document.getElementById("apage-next").disabled=!(d.pagination&&d.pagination.hasNext);
+    document.getElementById("apage-next").disabled=!(res.data&&res.data.pagination&&res.data.pagination.hasNext);
   }catch{el.innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal memuat</div>`}
 }
 
 function switchAnime(mode){
   anMode=mode; anPage=1;
-  ["ongoing","batchs","movies"].forEach(m=>{
+  ["ongoing","complete"].forEach(m=>{
     document.getElementById(`atab-${m}`).classList.toggle("active",m===mode);
   });
   loadAnGrid();
