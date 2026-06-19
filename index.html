@@ -600,8 +600,13 @@ function parseODEp(url){
 // ── UTILS ──────────────────────────────────────────────────────────────────
 async function apiGet(base,p){
   const r = await fetch(`${base}?${new URLSearchParams(p)}`);
-  if(!r.ok) throw new Error("HTTP "+r.status);
-  return r.json();
+  let body=null;
+  try{ body = await r.json(); }catch{ body=null; }
+  if(!r.ok){
+    const msg = (body && body.error) ? body.error : ("HTTP "+r.status);
+    throw new Error(msg);
+  }
+  return body;
 }
 function toast(m){
   const t=document.getElementById("toast");
@@ -609,6 +614,40 @@ function toast(m){
   setTimeout(()=>t.classList.remove("show"),2200);
 }
 function slug(url){return url?url.replace(/^https?:\/\/[^/]+\//,"").replace(/\/$/,""):""}
+
+// ── CACHE LAYER (localStorage) ──────────────────────────────────────────────
+// Browse/home data di-cache biar buka web berikutnya gak perlu nunggu API lagi.
+// Search, detail, dan watch/episode TIDAK di-cache (harus selalu fresh).
+const CACHE_VERSION="v1";
+const CACHE_PREFIX=`cn_cache_${CACHE_VERSION}_`;
+const CACHE_TTL=15*60*1000; // 15 menit
+
+function cacheGet(key){
+  try{
+    const raw=localStorage.getItem(CACHE_PREFIX+key);
+    if(!raw)return null;
+    const {t,data}=JSON.parse(raw);
+    return {data, fresh:(Date.now()-t)<CACHE_TTL};
+  }catch{return null}
+}
+function cacheSet(key,data){
+  try{localStorage.setItem(CACHE_PREFIX+key,JSON.stringify({t:Date.now(),data}))}catch{}
+}
+// Ambil data: pakai cache kalau masih fresh (skip network sama sekali),
+// kalau expired/gak ada → fetch baru lalu simpan ke cache.
+// Kalau fetch gagal tapi ada cache lama (meski expired), pakai itu sebagai fallback.
+async function cachedApiGet(base,p,cacheKey){
+  const cached=cacheGet(cacheKey);
+  if(cached&&cached.fresh)return cached.data;
+  try{
+    const d=await apiGet(base,p);
+    cacheSet(cacheKey,d);
+    return d;
+  }catch(e){
+    if(cached)return cached.data; // fallback ke cache lama daripada gagal total
+    throw e;
+  }
+}
 
 // ── HISTORY ────────────────────────────────────────────────────────────────
 function getHist(){try{return JSON.parse(localStorage.getItem(HIST_KEY)||"[]")}catch{return[]}}
@@ -681,7 +720,7 @@ function goSearch(){showSection("search");setTimeout(()=>document.getElementById
 async function loadHome(){
   // Donghua
   try{
-    const d=await apiGet(DH_API,{cmd:"home"});
+    const d=await cachedApiGet(DH_API,{cmd:"home"},"dh_home");
     const pop=d.popular_series||[];
     if(pop.length) heroTimer=buildHero("hero-track","hero-dots",pop.slice(0,8),heroTimer,
       i=>openDetail(encodeURIComponent(slug(i.url))),"DONGHUA");
@@ -692,14 +731,14 @@ async function loadHome(){
     document.getElementById("home-popular").innerHTML="";
   }
   try{
-    const d=await apiGet(DH_API,{cmd:"new-series",page:1});
+    const d=await cachedApiGet(DH_API,{cmd:"new-series",page:1},"dh_new_p1");
     renderGrid3(document.getElementById("home-new"),(d.result||[]).slice(0,9),"dh");
   }catch{
     document.getElementById("home-new").innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal</div>`;
   }
   // Anime: OtakuDesu (browse source)
   try{
-    const res=await apiGet(OD_API,{cmd:"home"});
+    const res=await cachedApiGet(OD_API,{cmd:"home"},"od_home");
     const items=nnNorm((res.data&&res.data.items)||[]).slice(0,9);
     if(!items.length) throw new Error("empty");
     renderGrid3(document.getElementById("home-anime"),items,"od");
@@ -756,7 +795,7 @@ function renderPopular(items){
 // ── DONGHUA SECTION ────────────────────────────────────────────────────────
 async function loadDonghuaSection(){
   try{
-    const d=await apiGet(DH_API,{cmd:"home"});
+    const d=await cachedApiGet(DH_API,{cmd:"home"},"dh_home");
     const pop=d.popular_series||[];
     if(pop.length) dhHeroTimer=buildHero("dh-hero-track","dh-hero-dots",pop.slice(0,8),dhHeroTimer,
       i=>openDetail(encodeURIComponent(slug(i.url))),"DONGHUA");
@@ -766,14 +805,16 @@ async function loadDonghuaSection(){
 }
 async function loadDHGrid(){
   const el=document.getElementById("dh-grid");
-  el.innerHTML=`<div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div>`;
+  const cacheKey=`dh_grid_${dhMode}_p${dhPage}`;
+  const cached=cacheGet(cacheKey);
+  if(!cached) el.innerHTML=`<div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div>`;
   try{
-    const d=await apiGet(DH_API,{cmd:dhMode==="new"?"new-series":"completed",page:dhPage});
+    const d=await cachedApiGet(DH_API,{cmd:dhMode==="new"?"new-series":"completed",page:dhPage},cacheKey);
     if(!d.result||!d.result.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada data</div>`;return}
     el.innerHTML=d.result.map(i=>gcHTML(i,"dh")).join("");
     document.getElementById("dpage-prev").disabled=dhPage<=1;
     document.getElementById("dpage-next").disabled=!d.has_next;
-  }catch{el.innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal</div>`}
+  }catch(e){el.innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal: ${e.message}</div>`}
 }
 function switchDonghua(mode){
   dhMode=mode;dhPage=1;
@@ -787,7 +828,7 @@ function changeDPage(dir){dhPage=Math.max(1,dhPage+dir);loadDHGrid();window.scro
 async function loadAnimeSection(){
   // Hero & Latest
   try{
-    const res=await apiGet(OD_API,{cmd:"home"});
+    const res=await cachedApiGet(OD_API,{cmd:"home"},"od_home");
     const items=nnNorm((res.data&&res.data.items)||[]);
     if(!items.length) throw new Error("empty");
     anHeroTimer=buildHero("an-hero-track","an-hero-dots",items.slice(0,8),anHeroTimer,
@@ -801,15 +842,17 @@ async function loadAnimeSection(){
 
 async function loadAnGrid(){
   const el=document.getElementById("an-grid");
-  el.innerHTML=`<div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div>`;
+  const cacheKey=`od_grid_${anMode}_p${anPage}`;
+  const cached=cacheGet(cacheKey);
+  if(!cached) el.innerHTML=`<div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div>`;
   try{
-    const res=await apiGet(OD_API,{cmd:anMode,page:anPage});
+    const res=await cachedApiGet(OD_API,{cmd:anMode,page:anPage},cacheKey);
     const items=nnNorm((res.data&&res.data.items)||[]);
     if(!items.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada data</div>`;return}
     el.innerHTML=items.map(i=>gcHTML(i,"od")).join("");
     document.getElementById("apage-prev").disabled=anPage<=1;
     document.getElementById("apage-next").disabled=!(res.data&&res.data.pagination&&res.data.pagination.hasNext);
-  }catch{el.innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal memuat</div>`}
+  }catch(e){el.innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal: ${e.message}</div>`}
 }
 
 function switchAnime(mode){
@@ -862,10 +905,13 @@ const DAY_ORDER=["Senin","Selasa","Rabu","Kamis","Jumat","Sabtu","Minggu"];
 
 async function loadSchedule(){
   scheduleLoaded=true;
-  document.getElementById("sch-body").innerHTML=`<div class="loader"><div class="spinner"></div><div class="ldr-txt">Memuat jadwal...</div></div>`;
+  const cachedDH=cacheGet("dh_schedule"), cachedAN=cacheGet("od_schedule");
+  if(!(cachedDH&&cachedDH.fresh)||!(cachedAN&&cachedAN.fresh)){
+    document.getElementById("sch-body").innerHTML=`<div class="loader"><div class="spinner"></div><div class="ldr-txt">Memuat jadwal...</div></div>`;
+  }
   const [dhRes,odRes]=await Promise.allSettled([
-    apiGet(DH_API,{cmd:"schedule"}),
-    apiGet(OD_API,{cmd:"jadwal"})
+    cachedApiGet(DH_API,{cmd:"schedule"},"dh_schedule"),
+    cachedApiGet(OD_API,{cmd:"jadwal"},"od_schedule")
   ]);
   scheduleDataDH = dhRes.status==="fulfilled" ? (dhRes.value.result||{}) : {};
   scheduleDataAN = odRes.status==="fulfilled" ? ((odRes.value.data&&odRes.value.data.schedule)||{}) : {};
