@@ -444,43 +444,24 @@ class NeonimeScraper {
   }
 }
 
-if (require.main === module) {
-  const args = process.argv.slice(2);
-  const command = args[0];
-  const params = args.slice(1);
-  const scraper = new NeonimeScraper();
-
-  (async () => {
+// ── VERCEL SERVERLESS HANDLER ───────────────────────────────────────────────
+// File ini ada di /api/neonime.js, jadi otomatis jadi endpoint /api/neonime
+module.exports = async (req, res) => {
+  const nn = new NeonimeScraper();
+  const { cmd, slug, query, ep, page = 1 } = req.query;
+  try {
     let result;
-    try {
-      switch (command) {
-        case 'home':    result = await scraper.home(parseInt(params[0]) || 1); break;
-        case 'ongoing': result = await scraper.ongoing(parseInt(params[0]) || 1); break;
-        case 'batchs':  result = await scraper.batchs(parseInt(params[0]) || 1); break;
-        case 'movies':  result = await scraper.movies(parseInt(params[0]) || 1); break;
-        case 'latest':  result = await scraper.latest(parseInt(params[0]) || 1); break;
-        case 'search':
-          if (!params[0]) throw new Error('Query required');
-          result = await scraper.search(params[0], parseInt(params[1]) || 1); break;
-        case 'detail':
-          if (!params[0]) throw new Error('Slug required');
-          result = await scraper.detail(params[0]); break;
-        case 'episode':
-          if (!params[0]) throw new Error('Slug required');
-          const ep = parseInt(params[1]);
-          if (isNaN(ep)) throw new Error('Episode number required');
-          result = await scraper.episode(params[0], ep); break;
-        case 'all': result = await scraper.all(); break;
-        default:
-          console.error('Commands: home | ongoing | batchs | movies | latest | search <q> | detail <slug> | episode <slug> <ep> | all');
-          process.exit(1);
-      }
-      console.log(JSON.stringify(result, null, 2));
-    } catch (err) {
-      console.error(JSON.stringify({ error: err.message }));
-      process.exit(1);
-    }
-  })();
-}
-
-module.exports = NeonimeScraper;
+    if (cmd === 'home')         result = await nn.home(parseInt(page) || 1);
+    else if (cmd === 'ongoing') result = await nn.ongoing(parseInt(page) || 1);
+    else if (cmd === 'batchs')  result = await nn.batchs(parseInt(page) || 1);
+    else if (cmd === 'movies')  result = await nn.movies(parseInt(page) || 1);
+    else if (cmd === 'latest')  result = await nn.latest(parseInt(page) || 1);
+    else if (cmd === 'search')  result = await nn.search(query, parseInt(page) || 1);
+    else if (cmd === 'detail')  result = await nn.detail(slug);
+    else if (cmd === 'episode') result = await nn.episode(slug, parseInt(ep));
+    else return res.status(400).json({ error: 'Unknown cmd: ' + cmd });
+    res.status(200).json(result);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+};
