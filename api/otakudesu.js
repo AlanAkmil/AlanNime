@@ -2,11 +2,36 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const https = require('https');
 
+/*
+ * Dependencies: npm install axios cheerio
+ *
+ * Backend route Express (tambahkan ke server lu):
+ *
+ * const OtakuDesuScraper = require('./otakudesu.js');
+ * const od = new OtakuDesuScraper();
+ * app.get('/api/otakudesu', async (req, res) => {
+ *   const { cmd, slug, query, ep, genre, page=1 } = req.query;
+ *   try {
+ *     if(cmd==='home')     return res.json(await od.home(+page));
+ *     if(cmd==='terbaru')  return res.json(await od.terbaru(+page));
+ *     if(cmd==='jadwal')   return res.json(await od.jadwalRilis());
+ *     if(cmd==='ongoing')  return res.json(await od.ongoing(+page));
+ *     if(cmd==='complete') return res.json(await od.complete(+page));
+ *     if(cmd==='genre')    return res.json(await od.genre(genre,+page));
+ *     if(cmd==='search')   return res.json(await od.search(query,+page));
+ *     if(cmd==='detail')   return res.json(await od.detail(slug));
+ *     if(cmd==='episode')  return res.json(await od.episode(slug,+ep));
+ *     res.json({error:'Unknown cmd'});
+ *   } catch(e){ res.json({error:e.message}); }
+ * });
+ */
+
 const userAgents = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0',
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7; rv:133.0) Gecko/20100101 Firefox/133.0',
   'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0',
   'Mozilla/5.0 (iPhone; CPU iPhone OS 17_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Mobile/15E148 Safari/604.1',
@@ -14,320 +39,428 @@ const userAgents = [
 ];
 
 const BASE_URL = 'https://otakudesu.news';
-const EP_BASE  = 'https://nontonanimex.com';
+const EP_BASE = 'https://nontonanimex.com';
 
-let _uaIdx = 0;
+let _uaIndex = 0;
 
 function getHeaders(referer) {
-  const ua = userAgents[_uaIdx++ % userAgents.length];
+  const ua = userAgents[_uaIndex % userAgents.length];
+  _uaIndex++;
   return {
     'User-Agent': ua,
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
     'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
     'Accept-Encoding': 'gzip, deflate, br',
-    'Referer': referer || BASE_URL + '/',
+    'Referer': referer || 'https://nontonanimex.com/',
+    'Sec-Ch-Ua': '"Not A(Brand";v="99", "Google Chrome";v="131", "Chromium";v="131"',
+    'Sec-Ch-Ua-Mobile': '?0',
+    'Sec-Ch-Ua-Platform': '"Windows"',
     'Sec-Fetch-Dest': 'document',
     'Sec-Fetch-Mode': 'navigate',
     'Sec-Fetch-Site': 'same-origin',
+    'Sec-Fetch-User': '?1',
     'Upgrade-Insecure-Requests': '1',
     'Connection': 'keep-alive',
+    'Cache-Control': 'max-age=0'
   };
 }
 
-async function fetchUrl(url, retries = 4, referer = null) {
+async function fetchWithRetry(url, retries = 5, referer = null) {
+  const headers = getHeaders(referer || url);
   const config = {
-    url, method: 'GET',
-    headers: getHeaders(referer || url),
-    timeout: 25000,
+    url,
+    method: 'GET',
+    headers,
+    timeout: 30000,
     httpsAgent: new https.Agent({ rejectUnauthorized: false }),
     maxRedirects: 0,
     decompress: true,
-    validateStatus: s => s >= 200 && s < 400,
+    validateStatus: status => status >= 200 && status < 400
   };
-  let last;
+  let lastError;
   for (let i = 0; i < retries; i++) {
     try {
-      return await axios(config);
+      const response = await axios(config);
+      return response;
     } catch (err) {
-      if (err.response && err.response.status >= 300 && err.response.status < 400) return err.response;
-      last = err;
-      if (i < retries - 1) await new Promise(r => setTimeout(r, 800 * (i + 1)));
+      if (err.response && err.response.status >= 300 && err.response.status < 400) {
+        return err.response;
+      }
+      lastError = err;
+      if (err.response && err.response.status === 403) {
+        await new Promise(r => setTimeout(r, 500 + Math.random() * 1000));
+        continue;
+      }
+      if (i < retries - 1) await new Promise(r => setTimeout(r, 1000 * (i + 1)));
     }
   }
-  throw last;
+  throw lastError || new Error('Fetch failed after retries');
 }
 
-function decodeToken(token) {
+function decodeDownloadUrl(encodedStr) {
   try {
-    let rev = token.split('').reverse().join('');
-    let out = '';
-    for (let i = 0; i < rev.length; i += 2) {
-      out += String.fromCharCode(parseInt(rev.substr(i, 2), 36) - (Math.floor(i / 2) % 7 + 5));
+    let reversed = encodedStr.split('').reverse().join('');
+    let decoded = '';
+    for (let i = 0; i < reversed.length; i += 2) {
+      let charCode = parseInt(reversed.substr(i, 2), 36) - ((i / 2) % 7 + 5);
+      decoded += String.fromCharCode(charCode);
     }
-    return decodeURIComponent(out);
-  } catch { return null; }
-}
-
-async function resolveLStream(url) {
-  try {
-    const r = await fetchUrl(url, 3, url);
-    if (r.status >= 300 && r.status < 400 && r.headers.location) return r.headers.location;
-    const m = (r.data || '').match(/<iframe[^>]*src=["']([^"']+)["']/i);
-    if (m) return m[1];
+    return decodeURIComponent(decoded);
+  } catch (error) {
     return null;
-  } catch { return null; }
-}
-
-function toEmbedUrl(raw) {
-  if (!raw) return null;
-  if (raw.includes('mega.nz/file/')) return raw.replace('mega.nz/file/', 'mega.nz/embed/');
-  if (raw.includes('mega.nz/#!'))   return raw.replace('mega.nz/#!', 'mega.nz/embed/#!');
-  const ace = raw.match(/acefile\.co\/f\/(\d+)/);
-  if (ace) return 'https://acefile.co/player/' + ace[1];
-  const krak = raw.match(/krakenfiles\.com\/view\/([^/]+)/);
-  if (krak) return 'https://krakenfiles.com/embed-video/' + krak[1];
-  return raw;
-}
-
-function parseList(html) {
-  const $ = cheerio.load(html);
-  const items = [];
-  $('div.xrelated').each((_, el) => {
-    const $el = $(el);
-    const link  = $el.find('a').attr('href');
-    const image = $el.find('img').attr('src');
-    const title = $el.find('div.titlelist').text().trim();
-    const eps   = $el.find('div.eplist').text().trim();
-    const score = $el.find('div.starlist').text().replace('★','').trim();
-    if (title && link) items.push({
-      title, link: link.startsWith('http') ? link : BASE_URL + link,
-      image: image || null, eps, score,
-    });
-  });
-  return items;
-}
-
-function parsePagination($, currentUrl) {
-  const links = [];
-  $('.pagination a, .pagination span').each((_, el) => {
-    const href = $(el).attr('href'), text = $(el).text().trim();
-    if (href) links.push({ text, href });
-  });
-  const nextLink = links.find(l => l.text === '»' || l.text.toLowerCase().includes('next'));
-  const numbers  = links.filter(l => /^\d+$/.test(l.text));
-  const m = (currentUrl || '').match(/\/page\/(\d+)/);
-  return {
-    current: m ? parseInt(m[1]) : 1,
-    hasNext: !!nextLink,
-    next:    nextLink ? (nextLink.href.startsWith('http') ? nextLink.href : BASE_URL + nextLink.href) : null,
-    total:   numbers.length ? Math.max(...numbers.map(l => parseInt(l.text))) : null,
-  };
-}
-
-// ─── HANDLERS ──────────────────────────────────────────────────────────────
-
-async function cmdHome(page) {
-  const url = page <= 1 ? BASE_URL + '/' : `${BASE_URL}/page/${page}/`;
-  const html = (await fetchUrl(url)).data;
-  const $ = cheerio.load(html);
-  return { data: parseList(html), pagination: parsePagination($, url) };
-}
-
-async function cmdTerbaru(page) {
-  const url = page <= 1 ? `${BASE_URL}/terbaru/` : `${BASE_URL}/terbaru/page/${page}`;
-  const html = (await fetchUrl(url)).data;
-  const $ = cheerio.load(html);
-  return { data: parseList(html), pagination: parsePagination($, url) };
-}
-
-async function cmdOngoing(page) {
-  const url = page <= 1 ? `${BASE_URL}/ongoing` : `${BASE_URL}/ongoing/page/${page}`;
-  const html = (await fetchUrl(url)).data;
-  const $ = cheerio.load(html);
-  return { data: parseList(html), pagination: parsePagination($, url) };
-}
-
-async function cmdComplete(page) {
-  const url = page <= 1 ? `${BASE_URL}/complete` : `${BASE_URL}/complete/page/${page}`;
-  const html = (await fetchUrl(url)).data;
-  const $ = cheerio.load(html);
-  return { data: parseList(html), pagination: parsePagination($, url) };
-}
-
-async function cmdSearch(query, page) {
-  const url = page <= 1
-    ? `${BASE_URL}/search/?q=${encodeURIComponent(query)}`
-    : `${BASE_URL}/search/page/${page}/?q=${encodeURIComponent(query)}`;
-  const html = (await fetchUrl(url)).data;
-  const $ = cheerio.load(html);
-  return { data: parseList(html), pagination: parsePagination($, url) };
-}
-
-async function cmdSchedule() {
-  const url = `${BASE_URL}/jadwal-rilis`;
-  const html = (await fetchUrl(url)).data;
-  const $ = cheerio.load(html);
-  const schedule = {};
-  $('.jdlist div').each((_, el) => {
-    const day = $(el).find('h2').text().trim();
-    const items = [];
-    $(el).find('ul li a').each((__, a) => {
-      const title = $(a).text().trim();
-      const link  = $(a).attr('href');
-      if (title && link) items.push({
-        title,
-        link: link.startsWith('http') ? link : BASE_URL + link,
-      });
-    });
-    if (day && items.length) schedule[day] = items;
-  });
-  return { schedule };
-}
-
-async function cmdDetail(slug) {
-  const url = `${BASE_URL}/${slug}/`;
-  const html = (await fetchUrl(url)).data;
-  const $ = cheerio.load(html);
-
-  const title = $('div.htitle h1').text().trim() || $('h1').first().text().trim();
-  const score = $('div.htitle span').text().trim() || null;
-  const poster = $('div.infoanime img').attr('src') || $('img.attachment-post-thumbnail').attr('src') || null;
-
-  const info = {};
-  $('ul.infol li').each((_, el) => {
-    const parts = $(el).text().trim().split(':');
-    if (parts.length >= 2) info[parts[0].trim()] = parts.slice(1).join(':').trim();
-  });
-
-  const synopsis = $('div.sinopc').text().trim() || null;
-
-  const episodes = [];
-  $('#ctlist li').each((_, el) => {
-    const $el = $(el);
-    const link = $el.find('a').attr('href');
-    const epTitle = $el.find('a').text().trim();
-    const date = $el.find('span').last().text().trim();
-    const epNum = epTitle.match(/Episode\s+(\d+)/i)?.[1] || null;
-    if (link) episodes.push({
-      title: epTitle,
-      url: link.startsWith('http') ? link : BASE_URL + link,
-      episode: epNum ? parseInt(epNum) : null,
-      releaseDate: date || null,
-    });
-  });
-
-  const genres = [];
-  $('ul.infol li').each((_, el) => {
-    const text = $(el).text();
-    if (text.toLowerCase().includes('genre')) {
-      $(el).find('a').each((__, a) => genres.push($(a).text().trim()));
-    }
-  });
-
-  return { title, score, poster, synopsis, info, genres, episodes, totalEpisodes: episodes.length };
-}
-
-async function cmdEpisode(slug, epNum) {
-  const url = `${EP_BASE}/episode/${slug}-episode-${epNum}-sub-indo/`;
-  const html = (await fetchUrl(url)).data;
-  const $ = cheerio.load(html);
-
-  const title  = $('.tlpost').text().trim() || $('h1').first().text().trim();
-  const poster = $('.imgrpv').attr('src') || null;
-
-  const embedPlayers = [];
-  const downloadLinks = [];
-  const promises = [];
-
-  $('.dlist ul li').each((_, el) => {
-    const $li = $(el);
-    const quality = $li.find('strong').text().trim();
-    if (!quality) return;
-    const embedServers = [], dlServers = [];
-
-    $li.find('a').each((__, aEl) => {
-      const srvName = $(aEl).text().trim();
-      const href = $(aEl).attr('href') || '';
-      const token = href.split('/go/')[1];
-      if (!token) return;
-      const realUrl = decodeToken(token);
-      if (!realUrl) return;
-      const isEmbed = ['acefile','mega','kfiles'].includes(srvName.toLowerCase());
-      if (isEmbed) embedServers.push({ server: srvName, raw: realUrl });
-      else         dlServers.push({ server: srvName, url: realUrl });
-    });
-
-    if (embedServers.length) {
-      promises.push(
-        Promise.all(embedServers.map(async s => {
-          let final = s.raw;
-          if (s.raw.includes('desustream')) {
-            const res = await resolveLStream(s.raw);
-            if (res) final = res;
-          }
-          return { server: s.server, embedUrl: toEmbedUrl(final) || final };
-        })).then(resolved => {
-          embedPlayers.push({ quality, servers: resolved.filter(s => s.embedUrl) });
-        })
-      );
-    }
-    if (dlServers.length) downloadLinks.push({ quality, servers: dlServers });
-  });
-
-  await Promise.all(promises);
-
-  let next = null, prev = null;
-  $('.othereps').each((_, el) => {
-    const href = $(el).attr('href');
-    if (!href) return;
-    const n = parseInt(href.match(/episode-(\d+)-/)?.[1]);
-    if (n === epNum + 1) next = href.startsWith('http') ? href : EP_BASE + href;
-    if (n === epNum - 1) prev = href.startsWith('http') ? href : EP_BASE + href;
-  });
-
-  // Ambil embed pertama yang tersedia sebagai default player
-  const defaultEmbed = embedPlayers[0]?.servers[0]?.embedUrl || null;
-
-  return { title, poster, episode: epNum, embedPlayers, downloadLinks, defaultEmbed, nextEpisode: next, prevEpisode: prev };
-}
-
-// ─── VERCEL HANDLER ────────────────────────────────────────────────────────
-
-module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  if (req.method === 'OPTIONS') return res.status(200).end();
-
-  const { cmd, slug, query, page = '1', epnum = '1' } = req.query;
-  const p = Math.max(1, parseInt(page) || 1);
-
-  try {
-    let result;
-    switch (cmd) {
-      case 'home':      result = await cmdHome(p);              break;
-      case 'terbaru':   result = await cmdTerbaru(p);           break;
-      case 'ongoing':   result = await cmdOngoing(p);           break;
-      case 'completed': result = await cmdComplete(p);          break;
-      case 'search':
-        if (!query) return res.status(400).json({ error: 'query required' });
-        result = await cmdSearch(query, p);
-        break;
-      case 'schedule':  result = await cmdSchedule();           break;
-      case 'detail':
-        if (!slug) return res.status(400).json({ error: 'slug required' });
-        result = await cmdDetail(slug);
-        break;
-      case 'episode':
-        if (!slug) return res.status(400).json({ error: 'slug required' });
-        result = await cmdEpisode(slug, parseInt(epnum) || 1);
-        break;
-      default:
-        return res.status(400).json({ error: `Unknown cmd: ${cmd}` });
-    }
-    res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=300');
-    return res.status(200).json({ ok: true, ...result });
-  } catch (err) {
-    console.error('[otakudesu]', err.message);
-    return res.status(500).json({ error: err.message });
   }
-};
+}
+
+async function resolveLStream(lstreamUrl) {
+  try {
+    const response = await fetchWithRetry(lstreamUrl, 3, lstreamUrl);
+    if (response.status >= 300 && response.status < 400 && response.headers.location) {
+      return response.headers.location;
+    }
+    if (response.headers['content-type'] && response.headers['content-type'].includes('application/json')) {
+      const json = response.data;
+      return json.url || json.stream || json.link || json.data || null;
+    }
+    const html = response.data;
+    const iframeMatch = html.match(/<iframe[^>]*src=["']([^"']+)["']/i);
+    if (iframeMatch) return iframeMatch[1];
+    return response.data.trim() || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function convertToEmbedUrl(rawUrl) {
+  if (!rawUrl) return null;
+  if (rawUrl.includes('mega.nz/file/')) return rawUrl.replace('mega.nz/file/', 'mega.nz/embed/');
+  if (rawUrl.includes('mega.nz/#!')) return rawUrl.replace('mega.nz/#!', 'mega.nz/embed/#!');
+  const aceMatch = rawUrl.match(/acefile\.co\/f\/(\d+)/);
+  if (aceMatch) return 'https://acefile.co/player/' + aceMatch[1];
+  const krakenMatch = rawUrl.match(/krakenfiles\.com\/view\/([^/]+)/);
+  if (krakenMatch) return 'https://krakenfiles.com/embed-video/' + krakenMatch[1];
+  return rawUrl;
+}
+
+function isEmbedServer(serverName) {
+  const s = serverName.toLowerCase();
+  return s === 'acefile' || s === 'mega' || s === 'kfiles';
+}
+
+class OtakuDesuScraper {
+  constructor() {
+    this.creator = 'rynaqrtz';
+    this.baseUrl = BASE_URL;
+    this.epBase = EP_BASE;
+  }
+
+  _clean(obj) {
+    if (obj === null || obj === undefined) return undefined;
+    if (Array.isArray(obj)) {
+      const cleaned = obj.map(i => this._clean(i)).filter(i => i !== undefined);
+      return cleaned.length ? cleaned : undefined;
+    }
+    if (typeof obj === 'object') {
+      const result = {};
+      for (const key of Object.keys(obj)) {
+        const val = this._clean(obj[key]);
+        if (val !== undefined) result[key] = val;
+      }
+      return Object.keys(result).length ? result : undefined;
+    }
+    return obj;
+  }
+
+  _parseList(html) {
+    const $ = cheerio.load(html);
+    const items = [];
+    $('div.xrelated').each((i, el) => {
+      const $el = $(el);
+      const link = $el.find('a').attr('href');
+      const img = $el.find('img').attr('src');
+      const title = $el.find('div.titlelist').text().trim();
+      const eps = $el.find('div.eplist').text().trim();
+      const score = $el.find('div.starlist').text().replace('★', '').trim();
+      if (title && link) {
+        items.push({
+          title,
+          link: link.startsWith('http') ? link : this.baseUrl + link,
+          img: img || null,
+          eps,
+          score
+        });
+      }
+    });
+    return items;
+  }
+
+  _parsePagination($) {
+    const pagination = { current: 1, next: null, total: null, hasNext: false };
+    const links = [];
+    $('.pagination a, .pagination span').each((i, el) => {
+      const href = $(el).attr('href');
+      const text = $(el).text().trim();
+      if (href) links.push({ text, href });
+    });
+    const nextLink = links.find(l => l.text === '»' || l.text.toLowerCase().includes('next'));
+    if (nextLink) {
+      pagination.next = nextLink.href.startsWith('http') ? nextLink.href : this.baseUrl + nextLink.href;
+      pagination.hasNext = true;
+    }
+    const numbers = links.filter(l => /^\d+$/.test(l.text));
+    if (numbers.length) {
+      pagination.total = Math.max(...numbers.map(l => parseInt(l.text)));
+    }
+    const url = this._lastUrl || '';
+    const pageMatch = url.match(/\/page\/(\d+)/);
+    if (pageMatch) pagination.current = parseInt(pageMatch[1]);
+    return pagination;
+  }
+
+  async home(page = 1) {
+    const url = page === 1 ? this.baseUrl + '/' : this.baseUrl + `/page/${page}/`;
+    this._lastUrl = url;
+    const html = (await fetchWithRetry(url)).data;
+    const $ = cheerio.load(html);
+    const items = this._parseList(html);
+    const pagination = this._parsePagination($);
+    return this._clean({ creator: this.creator, page: 'home', data: { url, pagination, items } });
+  }
+
+  async terbaru(page = 1) {
+    const url = page === 1 ? this.baseUrl + '/terbaru/' : this.baseUrl + `/terbaru/page/${page}`;
+    this._lastUrl = url;
+    const html = (await fetchWithRetry(url)).data;
+    const items = this._parseList(html);
+    const $ = cheerio.load(html);
+    const pagination = this._parsePagination($);
+    return this._clean({ creator: this.creator, page: 'terbaru', data: { url, pagination, items } });
+  }
+
+  async jadwalRilis() {
+    const url = this.baseUrl + '/jadwal-rilis';
+    this._lastUrl = url;
+    const html = (await fetchWithRetry(url)).data;
+    const $ = cheerio.load(html);
+    const schedule = {};
+    $('.jdlist div').each((i, el) => {
+      const day = $(el).find('h2').text().trim();
+      const items = [];
+      $(el).find('ul li a').each((j, a) => {
+        const title = $(a).text().trim();
+        const link = $(a).attr('href');
+        if (title && link) items.push({ title, link: link.startsWith('http') ? link : this.baseUrl + link });
+      });
+      if (day && items.length) schedule[day] = items;
+    });
+    return this._clean({ creator: this.creator, page: 'jadwal-rilis', data: { url, schedule } });
+  }
+
+  async ongoing(page = 1) {
+    const url = page === 1 ? this.baseUrl + '/ongoing' : this.baseUrl + `/ongoing/page/${page}`;
+    this._lastUrl = url;
+    const html = (await fetchWithRetry(url)).data;
+    const items = this._parseList(html);
+    const $ = cheerio.load(html);
+    const pagination = this._parsePagination($);
+    return this._clean({ creator: this.creator, page: 'ongoing', data: { url, pagination, items } });
+  }
+
+  async complete(page = 1) {
+    const url = page === 1 ? this.baseUrl + '/complete' : this.baseUrl + `/complete/page/${page}`;
+    this._lastUrl = url;
+    const html = (await fetchWithRetry(url)).data;
+    const items = this._parseList(html);
+    const $ = cheerio.load(html);
+    const pagination = this._parsePagination($);
+    return this._clean({ creator: this.creator, page: 'complete', data: { url, pagination, items } });
+  }
+
+  async genre(slug, page = 1) {
+    const url = page === 1 ? this.baseUrl + `/genre/${slug}/` : this.baseUrl + `/genre/${slug}/page/${page}`;
+    this._lastUrl = url;
+    const html = (await fetchWithRetry(url)).data;
+    const items = this._parseList(html);
+    const $ = cheerio.load(html);
+    const pagination = this._parsePagination($);
+    return this._clean({ creator: this.creator, page: 'genre', data: { url, slug, pagination, items } });
+  }
+
+  async search(query, page = 1) {
+    const url = page === 1 ? this.baseUrl + `/search/?q=${encodeURIComponent(query)}` : this.baseUrl + `/search/page/${page}/?q=${encodeURIComponent(query)}`;
+    this._lastUrl = url;
+    const html = (await fetchWithRetry(url)).data;
+    const items = this._parseList(html);
+    const $ = cheerio.load(html);
+    const pagination = this._parsePagination($);
+    return this._clean({ creator: this.creator, page: 'search', data: { url, query, pagination, items } });
+  }
+
+  async detail(slug) {
+    const url = this.baseUrl + `/${slug}/`;
+    this._lastUrl = url;
+    const html = (await fetchWithRetry(url)).data;
+    const $ = cheerio.load(html);
+
+    const title = $('div.htitle h1').text().trim() || $('h1').first().text().trim();
+    const score = $('div.htitle span').text().trim() || null;
+
+    const info = {};
+    $('ul.infol li').each((i, el) => {
+      const text = $(el).text().trim();
+      const parts = text.split(':');
+      if (parts.length >= 2) {
+        const key = parts[0].trim();
+        const val = parts.slice(1).join(':').trim();
+        if (key && val) info[key] = val;
+      }
+    });
+
+    const episodes = [];
+    $('#ctlist li').each((i, el) => {
+      const $el = $(el);
+      const link = $el.find('a').attr('href');
+      const title = $el.find('a').text().trim();
+      const date = $el.find('span').last().text().trim();
+      if (link) {
+        episodes.push({ title, url: link.startsWith('http') ? link : this.baseUrl + link, releaseDate: date || null });
+      }
+    });
+
+    return this._clean({ creator: this.creator, page: 'detail', data: { url, slug, title, score, info, episodes } });
+  }
+
+  async episode(slug, episodeNum) {
+    const url = this.epBase + `/episode/${slug}-episode-${episodeNum}-sub-indo/`;
+    this._lastUrl = url;
+    const html = (await fetchWithRetry(url)).data;
+    const $ = cheerio.load(html);
+
+    const title = $('.tlpost').text().trim() || $('h1').first().text().trim();
+    const poster = $('.imgrpv').attr('src') || null;
+    const defaultPlayer = $('#mediaplayer').attr('src') || null;
+
+    const embedPlayers = [];
+    const downloadLinks = [];
+    const promises = [];
+
+    $('.dlist ul li').each((_, el) => {
+      const $li = $(el);
+      const quality = $li.find('strong').text().trim();
+      if (!quality) return;
+
+      const embedServers = [];
+      const downloadServers = [];
+
+      $li.find('a').each((__, aEl) => {
+        const serverName = $(aEl).text().trim();
+        const href = $(aEl).attr('href') || '';
+        const token = href.split('/go/')[1];
+
+        if (token) {
+          const realUrl = decodeDownloadUrl(token);
+          if (realUrl) {
+            if (isEmbedServer(serverName)) {
+              embedServers.push({ server: serverName, raw: realUrl });
+            } else {
+              downloadServers.push({ server: serverName, url: realUrl });
+            }
+          }
+        }
+      });
+
+      if (embedServers.length > 0) {
+        const resolvePromises = embedServers.map(async (s) => {
+          let finalUrl = s.raw;
+          if (s.raw.includes('desustream') || s.raw.includes('link.desustream.com')) {
+            const resolved = await resolveLStream(s.raw);
+            if (resolved) finalUrl = resolved;
+          }
+          const embed = convertToEmbedUrl(finalUrl);
+          return { server: s.server, embedUrl: embed || finalUrl };
+        });
+        promises.push(
+          Promise.all(resolvePromises).then(resolvedServers => {
+            embedPlayers.push({ quality, servers: resolvedServers.filter(s => s.embedUrl && s.embedUrl.length > 0) });
+          })
+        );
+      }
+
+      if (downloadServers.length > 0) {
+        downloadLinks.push({ quality, servers: downloadServers.map(s => ({ server: s.server, url: s.url })) });
+      }
+    });
+
+    await Promise.all(promises);
+
+    let nextEpisode = null, prevEpisode = null;
+    $('.othereps').each((i, el) => {
+      const href = $(el).attr('href');
+      if (!href) return;
+      const num = parseInt(href.match(/episode-(\d+)-/)?.[1]);
+      if (num === episodeNum + 1) nextEpisode = href.startsWith('http') ? href : this.epBase + href;
+      if (num === episodeNum - 1) prevEpisode = href.startsWith('http') ? href : this.epBase + href;
+    });
+
+    return this._clean({
+      creator: this.creator,
+      page: 'episode',
+      data: { url, slug, episode: episodeNum, title, poster, defaultPlayer, embedPlayers, downloadLinks, nextEpisode, prevEpisode }
+    });
+  }
+
+  async all() {
+    const [home, terbaru, jadwal, ongoing, complete, genreComedy, searchDrStone, detail, episode] = await Promise.all([
+      this.home(1), this.terbaru(1), this.jadwalRilis(), this.ongoing(1), this.complete(1),
+      this.genre('comedy', 1), this.search('Dr. Stone', 1),
+      this.detail('ds-future-part3-sub-indo'), this.episode('drstn-s4-p3', 1)
+    ]);
+    return this._clean({
+      creator: this.creator, page: 'all',
+      data: { home: home.data, terbaru: terbaru.data, jadwal: jadwal.data, ongoing: ongoing.data,
+        complete: complete.data, genreComedy: genreComedy.data, searchDrStone: searchDrStone.data,
+        detail: detail.data, episode: episode.data }
+    });
+  }
+}
+
+if (require.main === module) {
+  const args = process.argv.slice(2);
+  const command = args[0];
+  const params = args.slice(1);
+  const scraper = new OtakuDesuScraper();
+
+  (async () => {
+    let result;
+    try {
+      switch (command) {
+        case 'home': result = await scraper.home(parseInt(params[0]) || 1); break;
+        case 'terbaru': result = await scraper.terbaru(parseInt(params[0]) || 1); break;
+        case 'jadwal': result = await scraper.jadwalRilis(); break;
+        case 'ongoing': result = await scraper.ongoing(parseInt(params[0]) || 1); break;
+        case 'complete': result = await scraper.complete(parseInt(params[0]) || 1); break;
+        case 'genre':
+          if (!params[0]) throw new Error('Genre slug required');
+          result = await scraper.genre(params[0], parseInt(params[1]) || 1); break;
+        case 'search':
+          if (!params[0]) throw new Error('Query required');
+          result = await scraper.search(params[0], parseInt(params[1]) || 1); break;
+        case 'detail':
+          if (!params[0]) throw new Error('Slug required');
+          result = await scraper.detail(params[0]); break;
+        case 'episode':
+          if (!params[0]) throw new Error('Slug required');
+          result = await scraper.episode(params[0], parseInt(params[1])); break;
+        case 'all': result = await scraper.all(); break;
+        default:
+          console.error('Commands: home, terbaru, jadwal, ongoing, complete, genre <slug>, search <query>, detail <slug>, episode <slug> <epNum>, all');
+          process.exit(1);
+      }
+      console.log(JSON.stringify(result, null, 2));
+    } catch (err) {
+      console.error(JSON.stringify({ error: err.message }));
+      process.exit(1);
+    }
+  })();
+}
+
+module.exports = OtakuDesuScraper;
