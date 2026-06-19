@@ -5,25 +5,10 @@ const https = require('https');
 /*
  * Dependencies: npm install axios cheerio
  *
- * Backend route Express (tambahkan ke server lu):
- *
- * const OtakuDesuScraper = require('./otakudesu.js');
- * const od = new OtakuDesuScraper();
- * app.get('/api/otakudesu', async (req, res) => {
- *   const { cmd, slug, query, ep, genre, page=1 } = req.query;
- *   try {
- *     if(cmd==='home')     return res.json(await od.home(+page));
- *     if(cmd==='terbaru')  return res.json(await od.terbaru(+page));
- *     if(cmd==='jadwal')   return res.json(await od.jadwalRilis());
- *     if(cmd==='ongoing')  return res.json(await od.ongoing(+page));
- *     if(cmd==='complete') return res.json(await od.complete(+page));
- *     if(cmd==='genre')    return res.json(await od.genre(genre,+page));
- *     if(cmd==='search')   return res.json(await od.search(query,+page));
- *     if(cmd==='detail')   return res.json(await od.detail(slug));
- *     if(cmd==='episode')  return res.json(await od.episode(slug,+ep));
- *     res.json({error:'Unknown cmd'});
- *   } catch(e){ res.json({error:e.message}); }
- * });
+ * File ini sudah jadi Vercel Serverless Function siap pakai.
+ * Taruh persis di: /api/otakudesu.js
+ * Otomatis bisa diakses lewat: https://domain-lu.vercel.app/api/otakudesu?cmd=home
+ * Gak perlu nambahin route apapun lagi — module.exports di bawah sudah jadi handler-nya.
  */
 
 const userAgents = [
@@ -423,44 +408,25 @@ class OtakuDesuScraper {
   }
 }
 
-if (require.main === module) {
-  const args = process.argv.slice(2);
-  const command = args[0];
-  const params = args.slice(1);
-  const scraper = new OtakuDesuScraper();
-
-  (async () => {
+// ── VERCEL SERVERLESS HANDLER ───────────────────────────────────────────────
+// File ini ada di /api/otakudesu.js, jadi otomatis jadi endpoint /api/otakudesu
+module.exports = async (req, res) => {
+  const od = new OtakuDesuScraper();
+  const { cmd, slug, query, ep, genre, page = 1 } = req.query;
+  try {
     let result;
-    try {
-      switch (command) {
-        case 'home': result = await scraper.home(parseInt(params[0]) || 1); break;
-        case 'terbaru': result = await scraper.terbaru(parseInt(params[0]) || 1); break;
-        case 'jadwal': result = await scraper.jadwalRilis(); break;
-        case 'ongoing': result = await scraper.ongoing(parseInt(params[0]) || 1); break;
-        case 'complete': result = await scraper.complete(parseInt(params[0]) || 1); break;
-        case 'genre':
-          if (!params[0]) throw new Error('Genre slug required');
-          result = await scraper.genre(params[0], parseInt(params[1]) || 1); break;
-        case 'search':
-          if (!params[0]) throw new Error('Query required');
-          result = await scraper.search(params[0], parseInt(params[1]) || 1); break;
-        case 'detail':
-          if (!params[0]) throw new Error('Slug required');
-          result = await scraper.detail(params[0]); break;
-        case 'episode':
-          if (!params[0]) throw new Error('Slug required');
-          result = await scraper.episode(params[0], parseInt(params[1])); break;
-        case 'all': result = await scraper.all(); break;
-        default:
-          console.error('Commands: home, terbaru, jadwal, ongoing, complete, genre <slug>, search <query>, detail <slug>, episode <slug> <epNum>, all');
-          process.exit(1);
-      }
-      console.log(JSON.stringify(result, null, 2));
-    } catch (err) {
-      console.error(JSON.stringify({ error: err.message }));
-      process.exit(1);
-    }
-  })();
-}
-
-module.exports = OtakuDesuScraper;
+    if (cmd === 'home')          result = await od.home(parseInt(page) || 1);
+    else if (cmd === 'terbaru')  result = await od.terbaru(parseInt(page) || 1);
+    else if (cmd === 'jadwal')   result = await od.jadwalRilis();
+    else if (cmd === 'ongoing')  result = await od.ongoing(parseInt(page) || 1);
+    else if (cmd === 'complete') result = await od.complete(parseInt(page) || 1);
+    else if (cmd === 'genre')    result = await od.genre(genre, parseInt(page) || 1);
+    else if (cmd === 'search')   result = await od.search(query, parseInt(page) || 1);
+    else if (cmd === 'detail')   result = await od.detail(slug);
+    else if (cmd === 'episode')  result = await od.episode(slug, parseInt(ep));
+    else return res.status(400).json({ error: 'Unknown cmd: ' + cmd });
+    res.status(200).json(result);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+};
