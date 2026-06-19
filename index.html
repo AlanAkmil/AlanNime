@@ -377,8 +377,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 <section id="sec-schedule" class="section">
   <div class="sh"><span class="sh-title"><span class="dot"></span>Jadwal Tayang</span></div>
   <div class="day-tabs-wrap" id="day-tabs"></div>
-  <div class="grid3" id="sch-grid" style="padding-bottom:10px">
-    <div class="loader" style="grid-column:1/-1"><div class="spinner"></div><div class="ldr-txt">Memuat jadwal...</div></div>
+  <div id="sch-body">
+    <div class="loader"><div class="spinner"></div><div class="ldr-txt">Memuat jadwal...</div></div>
   </div>
 </section>
 
@@ -448,17 +448,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 <script>
 /*
  * ══════════════════════════════════════════════════════════════════
- *  BACKEND ROUTES YANG DIBUTUHKAN (tambahkan ke server Express-mu):
+ *  BACKEND ROUTES (tambahkan ke server Express-mu):
  *
- *  GET /api/neonime?cmd=home           → scraper.home(page)
- *  GET /api/neonime?cmd=ongoing&page=1 → scraper.ongoing(page)
- *  GET /api/neonime?cmd=batchs&page=1  → scraper.batchs(page)
- *  GET /api/neonime?cmd=movies&page=1  → scraper.movies(page)
- *  GET /api/neonime?cmd=search&query=x → scraper.search(query)
- *  GET /api/neonime?cmd=detail&slug=x  → scraper.detail(slug)
- *  GET /api/neonime?cmd=episode&slug=x&ep=1 → scraper.episode(slug, ep)
- *
- *  Contoh route Express:
+ *  ── NEONIME (Browse + Fallback search) ──
  *  const NeonimeScraper = require('./neonime.js');
  *  const nn = new NeonimeScraper();
  *  app.get('/api/neonime', async (req, res) => {
@@ -468,10 +460,28 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
  *      if(cmd==='ongoing') return res.json(await nn.ongoing(+page));
  *      if(cmd==='batchs')  return res.json(await nn.batchs(+page));
  *      if(cmd==='movies')  return res.json(await nn.movies(+page));
- *      if(cmd==='latest')  return res.json(await nn.latest(+page));
  *      if(cmd==='search')  return res.json(await nn.search(query,+page));
  *      if(cmd==='detail')  return res.json(await nn.detail(slug));
- *      if(cmd==='episode') return res.json(await nn.episode(slug, +ep));
+ *      if(cmd==='episode') return res.json(await nn.episode(slug,+ep));
+ *      res.json({error:'Unknown cmd'});
+ *    } catch(e){ res.json({error:e.message}); }
+ *  });
+ *
+ *  ── OTAKUDESU (Search + Watch + Schedule utama anime) ──
+ *  const OtakuDesuScraper = require('./otakudesu.js');
+ *  const od = new OtakuDesuScraper();
+ *  app.get('/api/otakudesu', async (req, res) => {
+ *    const { cmd, slug, query, ep, genre, page=1 } = req.query;
+ *    try {
+ *      if(cmd==='home')     return res.json(await od.home(+page));
+ *      if(cmd==='terbaru')  return res.json(await od.terbaru(+page));
+ *      if(cmd==='jadwal')   return res.json(await od.jadwalRilis());
+ *      if(cmd==='ongoing')  return res.json(await od.ongoing(+page));
+ *      if(cmd==='complete') return res.json(await od.complete(+page));
+ *      if(cmd==='genre')    return res.json(await od.genre(genre,+page));
+ *      if(cmd==='search')   return res.json(await od.search(query,+page));
+ *      if(cmd==='detail')   return res.json(await od.detail(slug));
+ *      if(cmd==='episode')  return res.json(await od.episode(slug,+ep));
  *      res.json({error:'Unknown cmd'});
  *    } catch(e){ res.json({error:e.message}); }
  *  });
@@ -529,13 +539,13 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 })();
 
 // ── ENDPOINTS & GLOBALS ────────────────────────────────────────────────────
-const DH_API  = "/api/donghub";   // Donghua
-const GM_API  = "/api/gomunime";  // Anime fallback
-const NN_API  = "/api/neonime";   // Anime PRIMARY (Neonime/Otakupoi)
+const DH_API   = "/api/donghub";    // Donghua
+const NN_API   = "/api/neonime";    // Anime browse + search fallback
+const OD_API   = "/api/otakudesu"; // Anime search/watch/schedule PRIMARY (OtakuDesu)
 const IMG = u => u ? `/api/img?url=${encodeURIComponent(u)}` : "";
 const HIST_KEY = "cn_history";
 
-let scheduleLoaded=false, scheduleData={}, currentDay="";
+let scheduleLoaded=false, scheduleDataDH={}, scheduleDataAN={}, currentDay="";
 let dhMode="new", dhPage=1, dhLoaded=false;
 let anMode="ongoing", anPage=1, anLoaded=false;
 let searchMode="donghua", watchData=null;
@@ -569,6 +579,25 @@ function parseNNEp(url){
   return m ? {slug:m[1], ep:parseInt(m[2])} : null;
 }
 
+// ── OTAKUDESU HELPERS ──────────────────────────────────────────────────────
+// List items dari OtakuDesu shape-nya sama persis dengan Neonime
+// {title, link, img, eps, score} → bisa pakai nnNorm() langsung.
+
+// URL OtakuDesu series → slug bersih
+// "https://otakudesu.news/ds-future-part3-sub-indo/" → "ds-future-part3-sub-indo"
+function odSlug(url){
+  if(!url)return'';
+  return url.replace(/^https?:\/\/[^/]+\//,'').replace(/\/$/,'');
+}
+
+// Parse URL episode OtakuDesu → {slug, ep}
+// "https://nontonanimex.com/episode/drstn-s4-p3-episode-1-sub-indo/" → {slug:"drstn-s4-p3", ep:1}
+function parseODEp(url){
+  if(!url)return null;
+  const m = url.match(/\/episode\/(.+)-episode-(\d+)-sub-indo/);
+  return m ? {slug:m[1], ep:parseInt(m[2])} : null;
+}
+
 // ── UTILS ──────────────────────────────────────────────────────────────────
 async function apiGet(base,p){
   const r = await fetch(`${base}?${new URLSearchParams(p)}`);
@@ -598,7 +627,7 @@ function renderCW(){
   list.innerHTML=h.map(i=>{
     let fn;
     if(i.type==='neonime') fn=`openNNWatch('${encodeURIComponent(i.slug)}','${encodeURIComponent(i.seriesTitle||"")}','')`;
-    else if(i.type==='anime') fn=`openAnimeWatch('${encodeURIComponent(i.slug)}','${encodeURIComponent(i.seriesTitle||"")}')`;
+    else if(i.type==='od') fn=`openODWatch('${encodeURIComponent(i.slug)}','${encodeURIComponent(i.seriesTitle||"")}','${encodeURIComponent(i.thumb||"")}')`;
     else fn=`openWatch('${encodeURIComponent(i.slug)}')`;
     return`<div class="cw-card" onclick="${fn}">
       <img class="cw-thumb" src="${IMG(i.thumb)}" onerror="this.style.background='var(--card2)'" loading="lazy"/>
@@ -669,19 +698,14 @@ async function loadHome(){
   }catch{
     document.getElementById("home-new").innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal</div>`;
   }
-  // Anime: Neonime dulu, fallback Gomunime
+  // Anime: Neonime (browse source)
   try{
     const d=await apiGet(NN_API,{cmd:"home"});
     const items=nnNorm(d.items||[]).slice(0,9);
     if(!items.length) throw new Error("empty");
     renderGrid3(document.getElementById("home-anime"),items,"neonime");
   }catch{
-    try{
-      const d=await apiGet(GM_API,{cmd:"home"});
-      renderGrid3(document.getElementById("home-anime"),(d.data||[]).slice(0,9),"anime");
-    }catch{
-      document.getElementById("home-anime").innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal memuat</div>`;
-    }
+    document.getElementById("home-anime").innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal memuat</div>`;
   }
   renderCW();
 }
@@ -695,14 +719,16 @@ function renderGrid3(el,items,type){
 function gcHTML(i,type){
   const isDH=type==="dh"||type==="donghua";
   const isNN=type==="neonime";
+  const isOD=type==="od";
   let fn;
+  const thumb=i.thumbnail||i.poster||i.image||i.img||"";
   if(isDH)      fn=`openDetail('${encodeURIComponent(slug(i.url||i.link||""))}')`;
   else if(isNN) fn=`openNNDetail('${encodeURIComponent(nnSlug(i.url||i.link||""))}')`;
-  else          fn=`openAnimeDetail('${encodeURIComponent(slug(i.link||i.url||""))}')`;
-  const thumb=i.thumbnail||i.poster||i.image||i.img||"";
+  else if(isOD) fn=`openODDetail('${encodeURIComponent(odSlug(i.url||i.link||""))}','${encodeURIComponent(thumb)}')`;
+  else          fn=`openNNDetail('${encodeURIComponent(nnSlug(i.url||i.link||""))}')`;
   const ep=i.episode||i.eps||i.status||"";
   const rating=i.rating||i.score||(i.score?`★ ${i.score}`:"");
-  const badge=isDH?"NEW":isNN?"NEO":"ANIME";
+  const badge=isDH?"NEW":isNN?"NEO":isOD?"OD":"ANIME";
   return`<div class="gc" onclick="${fn}">
     <div class="gc-wrap">
       <img class="gc-img" src="${IMG(thumb)}" onerror="this.style.background='var(--card2)'" loading="lazy"/>
@@ -758,7 +784,7 @@ function switchDonghua(mode){
 }
 function changeDPage(dir){dhPage=Math.max(1,dhPage+dir);loadDHGrid();window.scrollTo({top:0,behavior:"smooth"})}
 
-// ── ANIME SECTION — Neonime PRIMARY, Gomunime FALLBACK ─────────────────────
+// ── ANIME SECTION — Neonime (Browse Source) ─────────────────────────────────
 async function loadAnimeSection(){
   // Hero & Latest
   try{
@@ -769,16 +795,7 @@ async function loadAnimeSection(){
       i=>openNNDetail(encodeURIComponent(nnSlug(i.url))),"NEONIME");
     renderGrid3(document.getElementById("an-latest"),items.slice(0,9),"neonime");
   }catch{
-    try{
-      const d=await apiGet(GM_API,{cmd:"home"});
-      const items=(d.data||[]);
-      if(items.length){
-        anHeroTimer=buildHero("an-hero-track","an-hero-dots",
-          items.slice(0,8).map(i=>({...i,thumbnail:i.poster})),anHeroTimer,
-          i=>openAnimeDetail(encodeURIComponent(slug(i.link||""))),"ANIME");
-        renderGrid3(document.getElementById("an-latest"),items.slice(0,9),"anime");
-      }
-    }catch{}
+    document.getElementById("an-latest").innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal memuat</div>`;
   }
   loadAnGrid();
 }
@@ -786,28 +803,13 @@ async function loadAnimeSection(){
 async function loadAnGrid(){
   const el=document.getElementById("an-grid");
   el.innerHTML=`<div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div>`;
-  // Coba Neonime dulu
   try{
     const d=await apiGet(NN_API,{cmd:anMode,page:anPage});
     const items=nnNorm(d.items||[]);
-    if(!items.length) throw new Error("empty");
+    if(!items.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada data</div>`;return}
     el.innerHTML=items.map(i=>gcHTML(i,"neonime")).join("");
     document.getElementById("apage-prev").disabled=anPage<=1;
     document.getElementById("apage-next").disabled=!(d.pagination&&d.pagination.hasNext);
-    return;
-  }catch{}
-  // Fallback Gomunime (hanya support ongoing)
-  if(anMode==="batchs"||anMode==="movies"){
-    el.innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Koneksi Neonime gagal.<br>Batch/Movies tidak tersedia dari sumber cadangan.</div>`;
-    return;
-  }
-  try{
-    const d=await apiGet(GM_API,{cmd:"ongoing",page:anPage});
-    const items=d.data||[];
-    if(!items.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada data</div>`;return}
-    el.innerHTML=items.map(i=>gcHTML(i,"anime")).join("");
-    document.getElementById("apage-prev").disabled=anPage<=1;
-    document.getElementById("apage-next").disabled=items.length<12;
   }catch{el.innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal memuat</div>`}
 }
 
@@ -837,39 +839,53 @@ async function doSearch(){
       if(!d.result||!d.result.length){el.innerHTML=`<div class="empty"><div class="empty-ico">🔍</div>Tidak ada hasil</div>`;return}
       el.innerHTML=`<div class="grid3" style="padding-top:8px">${d.result.map(i=>gcHTML(i,"dh")).join("")}</div>`;
     } else {
-      // Neonime dulu
-      let nnItems=[];
+      // OtakuDesu dulu (primary)
+      let odItems=[];
       try{
-        const d=await apiGet(NN_API,{cmd:"search",query:q});
-        nnItems=nnNorm(d.items||[]);
+        const d=await apiGet(OD_API,{cmd:"search",query:q});
+        odItems=nnNorm((d.data&&d.data.items)||[]);
       }catch{}
-      if(nnItems.length){
-        el.innerHTML=`<div class="grid3" style="padding-top:8px">${nnItems.map(i=>gcHTML(i,"neonime")).join("")}</div>`;
+      if(odItems.length){
+        el.innerHTML=`<div class="grid3" style="padding-top:8px">${odItems.map(i=>gcHTML(i,"od")).join("")}</div>`;
       } else {
-        // Fallback Gomunime
-        const d=await apiGet(GM_API,{cmd:"search",query:q});
-        if(!d.data||!d.data.length){el.innerHTML=`<div class="empty"><div class="empty-ico">🔍</div>Tidak ada hasil</div>`;return}
-        el.innerHTML=`<div class="grid3" style="padding-top:8px">${d.data.map(i=>gcHTML(i,"anime")).join("")}</div>`;
+        // Fallback Neonime
+        const d=await apiGet(NN_API,{cmd:"search",query:q});
+        const nnItems=nnNorm(d.items||[]);
+        if(!nnItems.length){el.innerHTML=`<div class="empty"><div class="empty-ico">🔍</div>Tidak ada hasil</div>`;return}
+        el.innerHTML=`<div class="grid3" style="padding-top:8px">${nnItems.map(i=>gcHTML(i,"neonime")).join("")}</div>`;
       }
     }
   }catch{el.innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div>Gagal mencari</div>`}
 }
 
-// ── SCHEDULE ───────────────────────────────────────────────────────────────
+// ── SCHEDULE (Donghua + OtakuDesu digabung) ─────────────────────────────────
+const DAY_ORDER=["Senin","Selasa","Rabu","Kamis","Jumat","Sabtu","Minggu"];
+
 async function loadSchedule(){
   scheduleLoaded=true;
-  try{
-    const d=await apiGet(DH_API,{cmd:"schedule"});
-    scheduleData=d.result||{};
-    const days=Object.keys(scheduleData);
-    if(!days.length){document.getElementById("sch-grid").innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada jadwal</div>`;return}
-    const todayMap=["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
-    const todayName=todayMap[new Date().getDay()];
-    currentDay=days.includes(todayName)?todayName:days[0];
-    document.getElementById("day-tabs").innerHTML=days.map(day=>
-      `<button class="day-tab${day===currentDay?' active':''}" onclick="switchDay('${day}')">${day}</button>`).join("");
-    renderSchDay(currentDay);
-  }catch{document.getElementById("sch-grid").innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal</div>`}
+  document.getElementById("sch-body").innerHTML=`<div class="loader"><div class="spinner"></div><div class="ldr-txt">Memuat jadwal...</div></div>`;
+  const [dhRes,odRes]=await Promise.allSettled([
+    apiGet(DH_API,{cmd:"schedule"}),
+    apiGet(OD_API,{cmd:"jadwal"})
+  ]);
+  scheduleDataDH = dhRes.status==="fulfilled" ? (dhRes.value.result||{}) : {};
+  scheduleDataAN = odRes.status==="fulfilled" ? ((odRes.value.data&&odRes.value.data.schedule)||{}) : {};
+
+  const dayKeys=new Set([...Object.keys(scheduleDataDH),...Object.keys(scheduleDataAN)]);
+  const days=DAY_ORDER.filter(d=>dayKeys.has(d));
+  // tambahkan hari yang gak ada di DAY_ORDER (jaga-jaga beda penamaan)
+  dayKeys.forEach(d=>{if(!days.includes(d))days.push(d)});
+
+  if(!days.length){
+    document.getElementById("sch-body").innerHTML=`<div class="empty">Tidak ada jadwal</div>`;
+    return;
+  }
+  const todayMap=["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+  const todayName=todayMap[new Date().getDay()];
+  currentDay=days.includes(todayName)?todayName:days[0];
+  document.getElementById("day-tabs").innerHTML=days.map(day=>
+    `<button class="day-tab${day===currentDay?' active':''}" onclick="switchDay('${day}')">${day}</button>`).join("");
+  renderSchDay(currentDay);
 }
 function switchDay(day){
   currentDay=day;
@@ -877,10 +893,26 @@ function switchDay(day){
   renderSchDay(day);
 }
 function renderSchDay(day){
-  const items=scheduleData[day]||[];
-  const el=document.getElementById("sch-grid");
-  if(!items.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada jadwal</div>`;return}
-  el.innerHTML=items.map(i=>gcHTML(i,"dh")).join("");
+  const dhItems=scheduleDataDH[day]||[];
+  const anItems=scheduleDataAN[day]||[];
+  const el=document.getElementById("sch-body");
+  if(!dhItems.length&&!anItems.length){el.innerHTML=`<div class="empty">Tidak ada jadwal hari ini</div>`;return}
+  let html="";
+  if(dhItems.length){
+    html+=`<div class="sh" style="padding-top:14px"><span class="sh-title"><span class="dot"></span>Donghua</span></div>
+      <div class="grid3" style="padding-bottom:6px">${dhItems.map(i=>gcHTML(i,"dh")).join("")}</div>`;
+  }
+  if(anItems.length){
+    html+=`<div class="sh" style="padding-top:14px"><span class="sh-title"><span class="dot"></span>Anime</span></div>
+      <div class="ep-list" style="padding:0 18px 18px">
+        ${anItems.map(i=>`
+          <div class="ep-row" onclick="openODDetail('${encodeURIComponent(odSlug(i.link||i.url||""))}','')">
+            <span class="ep-row-title">${i.title||""}</span>
+            <span class="ep-row-arr">›</span>
+          </div>`).join("")}
+      </div>`;
+  }
+  el.innerHTML=html;
 }
 
 // ── DONGHUA DETAIL ─────────────────────────────────────────────────────────
@@ -988,47 +1020,52 @@ async function openNNDetail(encodedSlug){
   }
 }
 
-// ── GOMUNIME DETAIL (Fallback) ─────────────────────────────────────────────
-async function openAnimeDetail(encodedSlug){
+// ── OTAKUDESU DETAIL (Search/Browse Primary) ────────────────────────────────
+async function openODDetail(encodedSlug,encodedThumb){
   const s=decodeURIComponent(encodedSlug);
+  const thumb=encodedThumb?decodeURIComponent(encodedThumb):"";
   const page=document.getElementById("detail-page");
   const body=document.getElementById("dp-body");
   document.getElementById("dp-back-title").textContent=s;
-  if(!page.classList.contains("open")){
-    body.innerHTML=`<div class="loader" style="padding:70px"><div class="spinner"></div></div>`;
-    page.classList.add("open");document.body.style.overflow="hidden";
-  } else {
-    body.innerHTML=`<div class="loader" style="padding:70px"><div class="spinner"></div><div class="ldr-txt">Mencoba sumber lain...</div></div>`;
-  }
+  body.innerHTML=`<div class="loader" style="padding:70px"><div class="spinner"></div><div class="ldr-txt">Memuat anime...</div></div>`;
+  page.classList.add("open");document.body.style.overflow="hidden";
   try{
-    const d=await apiGet(GM_API,{cmd:"detail",slug:s});
-    if(d.error){body.innerHTML=`<div class="empty"><div class="empty-ico">😞</div>${d.error}</div>`;return}
-    document.getElementById("dp-back-title").textContent=d.title||s;
-    const eps=d.episodeList||[];
+    const res=await apiGet(OD_API,{cmd:"detail",slug:s});
+    const d=res.data;
+    if(!d||!d.title){body.innerHTML=`<div class="empty"><div class="empty-ico">😞</div>Tidak ditemukan</div>`;return}
+    document.getElementById("dp-back-title").textContent=d.title;
+    const eps=d.episodes||[];
+    const info=d.info||{};
+    const genres=info.Genre?info.Genre.split(',').map(g=>g.trim()).filter(Boolean):[];
+    const poster=thumb; // OtakuDesu detail tidak punya poster, pakai thumbnail dari list/search
     body.innerHTML=`
-      <div class="dp-banner"><img class="dp-banner-img" src="${IMG(d.poster)}" onerror="this.style.display='none'"/></div>
-      <div class="dp-content">
-        <div class="dp-row">
-          <img class="dp-poster" src="${IMG(d.poster)}" onerror="this.style.background='var(--card2)'"/>
-          <div class="dp-meta">
-            <div class="dp-title">${d.title||s}</div>
+      ${poster?`<div class="dp-banner"><img class="dp-banner-img" src="${IMG(poster)}" onerror="this.style.display='none'"/></div>`:""}
+      <div class="dp-content"${poster?'':' style="padding-top:20px"'}>
+        <div class="dp-row"${poster?'':' style="margin-top:0"'}>
+          <img class="dp-poster" src="${IMG(poster)}" onerror="this.style.background='var(--card2)'"/>
+          <div class="dp-meta"${poster?'':' style="padding-top:0"'}>
+            <div class="dp-title">${d.title}</div>
             <div class="dp-tags">
               <span class="dp-tag" style="background:rgba(255,107,107,.12);color:#ff8e8e;border-color:rgba(255,107,107,.3)">Anime</span>
-              ${d.status?`<span class="dp-tag">${d.status}</span>`:""}
+              ${info.Status?`<span class="dp-tag">${info.Status}</span>`:""}
+              ${info.Tipe?`<span class="dp-tag">${info.Tipe}</span>`:""}
             </div>
             <div class="dp-stats">
-              ${d.rating?`<div class="dp-stat">⭐ <strong>${d.rating}</strong></div>`:""}
-              ${d.totalEpisodes?`<div class="dp-stat">🎬 <strong>${d.totalEpisodes} Ep</strong></div>`:""}
+              ${d.score||info.Score?`<div class="dp-stat">⭐ <strong>${d.score||info.Score}</strong></div>`:""}
+              ${info["Total Episode"]?`<div class="dp-stat">🎬 <strong>${info["Total Episode"]}</strong></div>`:""}
+              ${info.Durasi?`<div class="dp-stat">⏱ <strong>${info.Durasi}</strong></div>`:""}
+              ${info["Tanggal Rilis"]?`<div class="dp-stat">📅 <strong>${info["Tanggal Rilis"]}</strong></div>`:""}
             </div>
           </div>
         </div>
-        ${d.description?`<div class="dp-synopsis">${d.description.substring(0,350)}...</div>`:""}
+        ${genres.length?`<div class="dp-tags" style="margin-bottom:14px">${genres.map(g=>`<span class="dp-tag">${g}</span>`).join('')}</div>`:''}
+        ${info.Studio?`<div style="font-size:12px;color:var(--muted);margin-bottom:10px">🏢 Studio: <span style="color:var(--text2)">${info.Studio}</span></div>`:""}
         <div class="ep-list-hd">Daftar Episode <span>(${eps.length})</span></div>
         <div class="ep-list">
           ${eps.map(e=>`
-            <div class="ep-row" onclick="openAnimeWatch('${encodeURIComponent(e.url)}','${encodeURIComponent(d.title||s)}')">
-              <span class="ep-row-num">Ep ${e.episode}</span>
-              <span class="ep-row-title">${(d.title||s)} Episode ${e.episode}</span>
+            <div class="ep-row" onclick="openODWatch('${encodeURIComponent(e.url)}','${encodeURIComponent(d.title)}','${encodeURIComponent(poster)}')">
+              <span class="ep-row-title">${e.title||d.title}</span>
+              <span class="ep-row-date">${e.releaseDate||""}</span>
               <span class="ep-row-arr">›</span>
             </div>`).join("")}
         </div>
@@ -1107,33 +1144,72 @@ async function openNNWatch(encodedEpUrl,encodedTitle,encodedPoster){
   }
 }
 
-// ── GOMUNIME WATCH (Fallback) ──────────────────────────────────────────────
-async function openAnimeWatch(encodedUrl,encodedTitle){
-  const epUrl=decodeURIComponent(encodedUrl);
-  const title=encodedTitle?decodeURIComponent(encodedTitle):"";
+// ── OTAKUDESU WATCH (dengan Player asli + Download) ─────────────────────────
+async function openODWatch(encodedEpUrl,encodedSeriesTitle,encodedThumb){
+  const epUrl=decodeURIComponent(encodedEpUrl);
+  const title=encodedSeriesTitle?decodeURIComponent(encodedSeriesTitle):"";
+  const thumb=encodedThumb?decodeURIComponent(encodedThumb):"";
   resetWatchUI(title);
   document.getElementById("watch-page").classList.add("open");
+
+  const parsed=parseODEp(epUrl);
+  if(!parsed){
+    document.getElementById("srv-list").innerHTML=`<div style="color:var(--muted);font-size:12.5px">⚠️ URL episode tidak valid</div>`;
+    return;
+  }
   try{
-    const d=await apiGet(GM_API,{cmd:"watch",url:epUrl});
-    const iframes=(d.iframes||[]).filter(u=>/^https?:\/\//i.test(u));
-    if(iframes.length)document.getElementById("player-frame").src=iframes[0];
-    document.getElementById("srv-list").innerHTML=iframes.length
-      ?iframes.map((u,i)=>`<button class="srv-btn${i===0?' active':''}" onclick="switchSrv(this,'${encodeURIComponent(u)}')">${"Mirror "+(i+1)}</button>`).join("")
-      :`<div style="color:var(--muted);font-size:12.5px;padding:6px 0">⚠️ Tidak ada mirror</div>`;
-    addHist(epUrl,title,title,"","anime");
-  }catch{document.getElementById("srv-list").innerHTML=`<div style="color:var(--muted);font-size:12.5px">⚠️ Gagal memuat</div>`}
+    const res=await apiGet(OD_API,{cmd:"episode",slug:parsed.slug,ep:parsed.ep});
+    const d=res.data;
+    if(!d){throw new Error("Data kosong")}
+    document.getElementById("wp-ep-title").textContent=d.title||`Episode ${parsed.ep}`;
+
+    // Kumpulkan semua server (default player + embedPlayers per kualitas)
+    const allServers=[];
+    if(d.defaultPlayer&&/^https?:\/\//i.test(d.defaultPlayer)){
+      allServers.push({label:"Default",url:d.defaultPlayer});
+    }
+    (d.embedPlayers||[]).forEach(grp=>{
+      (grp.servers||[]).forEach(sv=>{
+        if(sv.embedUrl&&/^https?:\/\//i.test(sv.embedUrl)){
+          allServers.push({label:`${grp.quality} • ${sv.server}`,url:sv.embedUrl});
+        }
+      });
+    });
+
+    if(allServers.length){
+      document.getElementById("player-frame").src=allServers[0].url;
+      document.getElementById("srv-list").innerHTML=allServers.map((sv,i)=>
+        `<button class="srv-btn${i===0?' active':''}" onclick="switchSrv(this,'${encodeURIComponent(sv.url)}')">${sv.label}</button>`
+      ).join("");
+    } else {
+      document.getElementById("srv-list").innerHTML=`<div style="color:var(--muted);font-size:12.5px;padding:6px 0">⚠️ Tidak ada stream tersedia</div>`;
+    }
+
+    // Download links (format OtakuDesu: [{quality, servers:[{server,url}]}])
+    renderODDownloads(d.downloadLinks||[]);
+
+    // Nav & state
+    watchData={type:"od",slug:parsed.slug,currentEp:parsed.ep,seriesTitle:title,
+      next_episode:d.nextEpisode||null,prev_episode:d.prevEpisode||null};
+    document.getElementById("btn-prev-ep").disabled=!d.prevEpisode;
+    document.getElementById("btn-next-ep").disabled=!d.nextEpisode;
+
+    const finalThumb=d.poster||thumb;
+    addHist(epUrl,d.title||`Episode ${parsed.ep}`,title,finalThumb,"od");
+  }catch(e){
+    document.getElementById("srv-list").innerHTML=`<div style="color:var(--muted);font-size:12.5px">⚠️ Gagal memuat player</div>`;
+    document.getElementById("wp-ep-title").textContent="Gagal memuat";
+  }
 }
 
-// ── DOWNLOAD RENDERER ──────────────────────────────────────────────────────
+// ── DOWNLOAD RENDERER (Neonime: format/quality/links) ───────────────────────
 function renderDownloads(downloadLinks){
   const sec=document.getElementById("dl-section");
   const content=document.getElementById("dl-content");
   if(!downloadLinks||!downloadLinks.length){sec.style.display="none";return}
-  // Filter yang punya link valid
   const valid=downloadLinks.filter(d=>(d.links||[]).some(l=>l.url));
   if(!valid.length){sec.style.display="none";return}
   sec.style.display="block";
-  // Grup per format
   const groups={};
   valid.forEach(d=>{const f=d.format||"MP4";if(!groups[f])groups[f]=[];groups[f].push(d)});
   let html="";
@@ -1149,6 +1225,27 @@ function renderDownloads(downloadLinks){
     });
     html+=`</div>`;
   }
+  content.innerHTML=html;
+}
+
+// ── DOWNLOAD RENDERER (OtakuDesu: quality/servers) ──────────────────────────
+function renderODDownloads(downloadLinks){
+  const sec=document.getElementById("dl-section");
+  const content=document.getElementById("dl-content");
+  if(!downloadLinks||!downloadLinks.length){sec.style.display="none";return}
+  const valid=downloadLinks.filter(d=>(d.servers||[]).some(s=>s.url));
+  if(!valid.length){sec.style.display="none";return}
+  sec.style.display="block";
+  let html=`<div class="dl-format-block"><div class="dl-fmt-tag mp4">DOWNLOAD</div>`;
+  valid.forEach(d=>{
+    const servers=(d.servers||[]).filter(s=>s.url);
+    if(!servers.length)return;
+    html+=`<div class="dl-quality-item"><div class="dl-quality-name">${d.quality||""}</div>
+      <div class="dl-links-wrap">${servers.map(s=>
+        `<a class="dl-link-a" href="${s.url}" target="_blank" rel="noopener">⬇ ${s.server||"Download"}</a>`
+      ).join("")}</div></div>`;
+  });
+  html+=`</div>`;
   content.innerHTML=html;
 }
 
@@ -1175,6 +1272,8 @@ function navEp(dir){
   if(!url)return;
   if(watchData.type==="neonime"){
     openNNWatch(encodeURIComponent(url),encodeURIComponent(watchData.seriesTitle||""),"");
+  } else if(watchData.type==="od"){
+    openODWatch(encodeURIComponent(url),encodeURIComponent(watchData.seriesTitle||""),"");
   } else {
     openWatch(encodeURIComponent(slug(url)));
   }
