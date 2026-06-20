@@ -422,6 +422,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
     <iframe id="player-frame" allowfullscreen allow="autoplay;fullscreen"></iframe>
     <video id="player-video" controls playsinline style="display:none;width:100%;height:100%;background:#000"></video>
   </div>
+  <div id="video-err" style="display:none;padding:10px 18px;background:rgba(255,107,107,.1);color:#ff8e8e;font-size:12px;border-bottom:1px solid rgba(255,107,107,.25)">
+    ⚠️ Video gagal diputar. Coba ganti kualitas lain di bawah, atau pakai link Download.
+  </div>
   <div class="wp-info">
     <div class="wp-title" id="wp-ep-title"></div>
     <div class="wp-sub" id="wp-series-title"></div>
@@ -515,6 +518,7 @@ const DH_API = "/api/donghub";  // Donghua
 const NN_API = "/api/neonime";  // Anime search fallback only (sering 403 di server)
 const NG_API = "/api/nimegami"; // Anime search/watch/schedule PRIMARY (Nimegami)
 const IMG = u => u ? `/api/img?url=${encodeURIComponent(u)}` : "";
+const VIDEO = u => u ? `/api/video?url=${encodeURIComponent(u)}` : "";
 const HIST_KEY = "cn_history";
 
 let scheduleLoaded=false, scheduleDataDH={}, scheduleDataAN={}, currentDay="";
@@ -1231,7 +1235,15 @@ async function openNGWatch(encodedSlug,epNum,encodedSeriesTitle,encodedThumb){
     videoEl.style.display="block";
 
     if(defaultQ&&formats[defaultQ]){
-      videoEl.src=formats[defaultQ];
+      videoEl.src=VIDEO(formats[defaultQ]);
+      videoEl.onerror=()=>{
+        const errBox=document.getElementById("video-err");
+        if(errBox) errBox.style.display="block";
+      };
+      videoEl.onloadeddata=()=>{
+        const errBox=document.getElementById("video-err");
+        if(errBox) errBox.style.display="none";
+      };
       document.getElementById("srv-list").innerHTML=qualities.map(q=>
         `<button class="srv-btn${q===defaultQ?' active':''}" onclick="switchVideoQuality(this,'${encodeURIComponent(formats[q])}')">${q}</button>`
       ).join("");
@@ -1263,8 +1275,11 @@ function switchVideoQuality(btn,encodedUrl){
   const videoEl=document.getElementById("player-video");
   const wasPlaying=!videoEl.paused;
   const t=videoEl.currentTime;
-  videoEl.src=decodeURIComponent(encodedUrl);
-  videoEl.currentTime=t||0;
+  videoEl.src=VIDEO(decodeURIComponent(encodedUrl));
+  videoEl.addEventListener("loadedmetadata",function setT(){
+    videoEl.currentTime=t||0;
+    videoEl.removeEventListener("loadedmetadata",setT);
+  });
   if(wasPlaying) videoEl.play().catch(()=>{});
 }
 
@@ -1326,6 +1341,7 @@ function resetWatchUI(title){
   document.getElementById("btn-prev-ep").disabled=true;
   document.getElementById("btn-next-ep").disabled=true;
   document.getElementById("dl-section").style.display="none";
+  document.getElementById("video-err").style.display="none";
   watchData=null;
 }
 function switchSrv(btn,encodedUrl){
