@@ -339,17 +339,13 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
   </div>
 </section>
 
-<!-- ══ ANIME (Neonime Primary) ══ -->
+<!-- ══ ANIME (Nimegami Primary) ══ -->
 <section id="sec-anime" class="section">
   <div class="hero-wrap"><div class="hero-track" id="an-hero-track"></div><div class="hero-dots" id="an-hero-dots"></div></div>
   <div class="sh" style="padding-top:14px"><span class="sh-title"><span class="dot"></span>Anime Terbaru</span></div>
   <div class="grid3" id="an-latest"><div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div></div>
   <div class="gline" style="margin-top:14px"></div>
   <div class="sh"><span class="sh-title"><span class="dot"></span>Semua Anime</span></div>
-  <div class="tab-row">
-    <button class="tab-pill active" id="atab-ongoing" onclick="switchAnime('ongoing')">Ongoing</button>
-    <button class="tab-pill" id="atab-complete" onclick="switchAnime('complete')">Complete ✅</button>
-  </div>
   <div class="grid3" id="an-grid"><div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div></div>
   <div class="pagination">
     <button class="page-btn" id="apage-prev" onclick="changeAPage(-1)" disabled>‹ Prev</button>
@@ -422,7 +418,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
     <div class="back-btn" onclick="closeWatch()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
     <span id="wp-back-title" style="font-size:12.5px;color:var(--text2);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1"></span>
   </div>
-  <div id="player-wrap"><iframe id="player-frame" allowfullscreen allow="autoplay;fullscreen"></iframe></div>
+  <div id="player-wrap">
+    <iframe id="player-frame" allowfullscreen allow="autoplay;fullscreen"></iframe>
+    <video id="player-video" controls playsinline style="display:none;width:100%;height:100%;background:#000"></video>
+  </div>
   <div class="wp-info">
     <div class="wp-title" id="wp-ep-title"></div>
     <div class="wp-sub" id="wp-series-title"></div>
@@ -447,43 +446,17 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 <script>
 /*
  * ══════════════════════════════════════════════════════════════════
- *  BACKEND ROUTES (tambahkan ke server Express-mu):
+ *  Project ini pakai struktur Vercel Serverless Functions:
+ *  setiap file di folder /api/ otomatis jadi endpoint sendiri.
+ *  Gak perlu daftarin route manual kayak Express.
  *
- *  ── NEONIME (Browse + Fallback search) ──
- *  const NeonimeScraper = require('./neonime.js');
- *  const nn = new NeonimeScraper();
- *  app.get('/api/neonime', async (req, res) => {
- *    const { cmd, slug, query, ep, page=1 } = req.query;
- *    try {
- *      if(cmd==='home')    return res.json(await nn.home(+page));
- *      if(cmd==='ongoing') return res.json(await nn.ongoing(+page));
- *      if(cmd==='batchs')  return res.json(await nn.batchs(+page));
- *      if(cmd==='movies')  return res.json(await nn.movies(+page));
- *      if(cmd==='search')  return res.json(await nn.search(query,+page));
- *      if(cmd==='detail')  return res.json(await nn.detail(slug));
- *      if(cmd==='episode') return res.json(await nn.episode(slug,+ep));
- *      res.json({error:'Unknown cmd'});
- *    } catch(e){ res.json({error:e.message}); }
- *  });
+ *  /api/donghub.js   → /api/donghub   (Donghua)
+ *  /api/neonime.js   → /api/neonime   (Anime - fallback search doang)
+ *  /api/nimegami.js  → /api/nimegami  (Anime - sumber utama: browse/search/watch/jadwal)
+ *  /api/img.js       → /api/img       (Proxy gambar)
  *
- *  ── OTAKUDESU (Search + Watch + Schedule utama anime) ──
- *  const OtakuDesuScraper = require('./otakudesu.js');
- *  const od = new OtakuDesuScraper();
- *  app.get('/api/otakudesu', async (req, res) => {
- *    const { cmd, slug, query, ep, genre, page=1 } = req.query;
- *    try {
- *      if(cmd==='home')     return res.json(await od.home(+page));
- *      if(cmd==='terbaru')  return res.json(await od.terbaru(+page));
- *      if(cmd==='jadwal')   return res.json(await od.jadwalRilis());
- *      if(cmd==='ongoing')  return res.json(await od.ongoing(+page));
- *      if(cmd==='complete') return res.json(await od.complete(+page));
- *      if(cmd==='genre')    return res.json(await od.genre(genre,+page));
- *      if(cmd==='search')   return res.json(await od.search(query,+page));
- *      if(cmd==='detail')   return res.json(await od.detail(slug));
- *      if(cmd==='episode')  return res.json(await od.episode(slug,+ep));
- *      res.json({error:'Unknown cmd'});
- *    } catch(e){ res.json({error:e.message}); }
- *  });
+ *  Masing-masing file sudah include module.exports = async (req,res) => {...}
+ *  jadi tinggal taruh filenya di /api/, gak perlu ubah apa-apa lagi.
  * ══════════════════════════════════════════════════════════════════
  */
 
@@ -538,17 +511,20 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 })();
 
 // ── ENDPOINTS & GLOBALS ────────────────────────────────────────────────────
-const DH_API   = "/api/donghub";    // Donghua
-const NN_API   = "/api/neonime";    // Anime search fallback only (sering 403 di server)
-const OD_API   = "/api/otakudesu"; // Anime search/watch/schedule PRIMARY (OtakuDesu)
+const DH_API = "/api/donghub";  // Donghua
+const NN_API = "/api/neonime";  // Anime search fallback only (sering 403 di server)
+const NG_API = "/api/nimegami"; // Anime search/watch/schedule PRIMARY (Nimegami)
 const IMG = u => u ? `/api/img?url=${encodeURIComponent(u)}` : "";
 const HIST_KEY = "cn_history";
 
 let scheduleLoaded=false, scheduleDataDH={}, scheduleDataAN={}, currentDay="";
 let dhMode="new", dhPage=1, dhLoaded=false;
-let anMode="ongoing", anPage=1, anLoaded=false;
+let anPage=1, anLoaded=false;
 let searchMode="donghua", watchData=null;
 let heroTimer=null, dhHeroTimer=null, anHeroTimer=null;
+// Cache di-memory episode Nimegami biar klik antar-episode gak nembak API ulang
+// (1 halaman detail Nimegami udah ngandung semua episode sekaligus)
+const ngEpCache={};
 
 // ── NEONIME HELPERS ────────────────────────────────────────────────────────
 // Neonime list items: {title, link, img, eps, score}
@@ -578,23 +554,26 @@ function parseNNEp(url){
   return m ? {slug:m[1], ep:parseInt(m[2])} : null;
 }
 
-// ── OTAKUDESU HELPERS ──────────────────────────────────────────────────────
-// List items dari OtakuDesu shape-nya sama persis dengan Neonime
-// {title, link, img, eps, score} → bisa pakai nnNorm() langsung.
-
-// URL OtakuDesu series → slug bersih
-// "https://otakudesu.news/ds-future-part3-sub-indo/" → "ds-future-part3-sub-indo"
-function odSlug(url){
+// ── NIMEGAMI HELPERS ───────────────────────────────────────────────────────
+// List items Nimegami: {title, link, poster, rating, episode, status, type}
+function ngNorm(items){
+  return (items||[]).map(i=>({
+    title: i.title||'',
+    url:   i.link||'',
+    thumbnail: i.poster||'',
+    episode: i.episode?`Episode ${i.episode}`:(i.status||''),
+    rating: i.rating?`★ ${i.rating}`:''
+  }));
+}
+// URL Nimegami series → slug bersih
+// "https://nimegami.id/dr-stone-science-future-part-3-sub-indo" → "dr-stone-science-future-part-3-sub-indo"
+function ngSlug(url){
   if(!url)return'';
   return url.replace(/^https?:\/\/[^/]+\//,'').replace(/\/$/,'');
 }
-
-// Parse URL episode OtakuDesu → {slug, ep}
-// "https://nontonanimex.com/episode/drstn-s4-p3-episode-1-sub-indo/" → {slug:"drstn-s4-p3", ep:1}
-function parseODEp(url){
-  if(!url)return null;
-  const m = url.match(/\/episode\/(.+)-episode-(\d+)-sub-indo/);
-  return m ? {slug:m[1], ep:parseInt(m[2])} : null;
+// Sort array streaming/downloads Nimegami ascending by nomor episode
+function ngSortByEp(arr){
+  return [...(arr||[])].sort((a,b)=>(a.episode||0)-(b.episode||0));
 }
 
 // ── UTILS ──────────────────────────────────────────────────────────────────
@@ -615,37 +594,43 @@ function toast(m){
 }
 function slug(url){return url?url.replace(/^https?:\/\/[^/]+\//,"").replace(/\/$/,""):""}
 
-// ── CACHE LAYER (localStorage) ──────────────────────────────────────────────
-// Browse/home data di-cache biar buka web berikutnya gak perlu nunggu API lagi.
-// Search, detail, dan watch/episode TIDAK di-cache (harus selalu fresh).
-const CACHE_VERSION="v1";
+// ── CACHE LAYER (localStorage) — Stale-While-Revalidate ─────────────────────
+// Begitu data PERNAH berhasil ke-load sekali, dia akan terus dipakai/ditampilkan
+// walaupun fetch berikutnya gagal (situs sumber kadang 403 / IP block).
+// Refresh baru dilakukan diam-diam di background tanpa nampilin "Gagal"
+// selama masih ada cache lama yang bisa dipakai.
+const CACHE_VERSION="v2";
 const CACHE_PREFIX=`cn_cache_${CACHE_VERSION}_`;
-const CACHE_TTL=15*60*1000; // 15 menit
+const CACHE_TTL=15*60*1000; // 15 menit — setelah ini dianggap "stale", tapi tetep dipakai sambil refresh
 
-function cacheGet(key){
+function cacheGetRaw(key){
   try{
     const raw=localStorage.getItem(CACHE_PREFIX+key);
     if(!raw)return null;
-    const {t,data}=JSON.parse(raw);
-    return {data, fresh:(Date.now()-t)<CACHE_TTL};
+    return JSON.parse(raw); // {t, data}
   }catch{return null}
 }
-function cacheSet(key,data){
+function cacheSetRaw(key,data){
   try{localStorage.setItem(CACHE_PREFIX+key,JSON.stringify({t:Date.now(),data}))}catch{}
 }
-// Ambil data: pakai cache kalau masih fresh (skip network sama sekali),
-// kalau expired/gak ada → fetch baru lalu simpan ke cache.
-// Kalau fetch gagal tapi ada cache lama (meski expired), pakai itu sebagai fallback.
-async function cachedApiGet(base,p,cacheKey){
-  const cached=cacheGet(cacheKey);
-  if(cached&&cached.fresh)return cached.data;
-  try{
-    const d=await apiGet(base,p);
-    cacheSet(cacheKey,d);
-    return d;
-  }catch(e){
-    if(cached)return cached.data; // fallback ke cache lama daripada gagal total
-    throw e;
+function isStale(entry){return !entry||(Date.now()-entry.t)>CACHE_TTL}
+
+// swrLoad: render cache lama dulu (kalau ada) lewat onData(data, fromCache=true),
+// lalu kalau cache udah stale (atau gak ada), coba fetch baru di background.
+// Kalau fetch baru sukses → cache di-update & onData dipanggil lagi (fromCache=false).
+// Kalau fetch baru GAGAL tapi udah ada cache lama → diem aja, gak throw, gak ganggu UI.
+// Cuma throw kalau gak ada cache SAMA SEKALI dan fetch juga gagal (baru nampilin "Gagal").
+async function swrLoad(key,fetcher,onData){
+  const entry=cacheGetRaw(key);
+  if(entry) onData(entry.data,true);
+  if(isStale(entry)){
+    try{
+      const fresh=await fetcher();
+      cacheSetRaw(key,fresh);
+      onData(fresh,false);
+    }catch(e){
+      if(!entry) throw e; // gak ada apa-apa buat ditampilin → baru gagal beneran
+    }
   }
 }
 
@@ -665,7 +650,10 @@ function renderCW(){
   list.innerHTML=h.map(i=>{
     let fn;
     if(i.type==='neonime') fn=`openNNWatch('${encodeURIComponent(i.slug)}','${encodeURIComponent(i.seriesTitle||"")}','')`;
-    else if(i.type==='od') fn=`openODWatch('${encodeURIComponent(i.slug)}','${encodeURIComponent(i.seriesTitle||"")}','${encodeURIComponent(i.thumb||"")}')`;
+    else if(i.type==='ng'){
+      const [ngSlugVal,ngEpVal]=(i.slug||"").split("::");
+      fn=`openNGWatch('${encodeURIComponent(ngSlugVal||"")}',${parseInt(ngEpVal)||0},'${encodeURIComponent(i.seriesTitle||"")}','${encodeURIComponent(i.thumb||"")}')`;
+    }
     else fn=`openWatch('${encodeURIComponent(i.slug)}')`;
     return`<div class="cw-card" onclick="${fn}">
       <img class="cw-thumb" src="${IMG(i.thumb)}" onerror="this.style.background='var(--card2)'" loading="lazy"/>
@@ -720,28 +708,30 @@ function goSearch(){showSection("search");setTimeout(()=>document.getElementById
 async function loadHome(){
   // Donghua
   try{
-    const d=await cachedApiGet(DH_API,{cmd:"home"},"dh_home");
-    const pop=d.popular_series||[];
-    if(pop.length) heroTimer=buildHero("hero-track","hero-dots",pop.slice(0,8),heroTimer,
-      i=>openDetail(encodeURIComponent(slug(i.url))),"DONGHUA");
-    renderGrid3(document.getElementById("home-donghua"),(d.latest_episodes||[]).slice(0,9),"dh");
-    renderPopular(pop);
+    await swrLoad("dh_home",()=>apiGet(DH_API,{cmd:"home"}),(d)=>{
+      const pop=d.popular_series||[];
+      if(pop.length) heroTimer=buildHero("hero-track","hero-dots",pop.slice(0,8),heroTimer,
+        i=>openDetail(encodeURIComponent(slug(i.url))),"DONGHUA");
+      renderGrid3(document.getElementById("home-donghua"),(d.latest_episodes||[]).slice(0,9),"dh");
+      renderPopular(pop);
+    });
   }catch{
     document.getElementById("home-donghua").innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal memuat</div>`;
     document.getElementById("home-popular").innerHTML="";
   }
   try{
-    const d=await cachedApiGet(DH_API,{cmd:"new-series",page:1},"dh_new_p1");
-    renderGrid3(document.getElementById("home-new"),(d.result||[]).slice(0,9),"dh");
+    await swrLoad("dh_new_p1",()=>apiGet(DH_API,{cmd:"new-series",page:1}),(d)=>{
+      renderGrid3(document.getElementById("home-new"),(d.result||[]).slice(0,9),"dh");
+    });
   }catch{
     document.getElementById("home-new").innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal</div>`;
   }
-  // Anime: OtakuDesu (browse source)
+  // Anime: Nimegami (browse source)
   try{
-    const res=await cachedApiGet(OD_API,{cmd:"home"},"od_home");
-    const items=nnNorm((res.data&&res.data.items)||[]).slice(0,9);
-    if(!items.length) throw new Error("empty");
-    renderGrid3(document.getElementById("home-anime"),items,"od");
+    await swrLoad("ng_home",()=>apiGet(NG_API,{cmd:"home"}),(res)=>{
+      const items=ngNorm((res.data&&res.data.items)||[]).slice(0,9);
+      renderGrid3(document.getElementById("home-anime"),items,"ng");
+    });
   }catch{
     document.getElementById("home-anime").innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal memuat</div>`;
   }
@@ -757,16 +747,16 @@ function renderGrid3(el,items,type){
 function gcHTML(i,type){
   const isDH=type==="dh"||type==="donghua";
   const isNN=type==="neonime";
-  const isOD=type==="od";
+  const isNG=type==="ng";
   let fn;
   const thumb=i.thumbnail||i.poster||i.image||i.img||"";
   if(isDH)      fn=`openDetail('${encodeURIComponent(slug(i.url||i.link||""))}')`;
   else if(isNN) fn=`openNNDetail('${encodeURIComponent(nnSlug(i.url||i.link||""))}')`;
-  else if(isOD) fn=`openODDetail('${encodeURIComponent(odSlug(i.url||i.link||""))}','${encodeURIComponent(thumb)}')`;
+  else if(isNG) fn=`openNGDetail('${encodeURIComponent(ngSlug(i.url||i.link||""))}','${encodeURIComponent(thumb)}')`;
   else          fn=`openNNDetail('${encodeURIComponent(nnSlug(i.url||i.link||""))}')`;
   const ep=i.episode||i.eps||i.status||"";
   const rating=i.rating||i.score||(i.score?`★ ${i.score}`:"");
-  const badge=isDH?"NEW":isNN?"NEO":isOD?"OD":"ANIME";
+  const badge=isDH?"NEW":isNN?"NEO":isNG?"NG":"ANIME";
   return`<div class="gc" onclick="${fn}">
     <div class="gc-wrap">
       <img class="gc-img" src="${IMG(thumb)}" onerror="this.style.background='var(--card2)'" loading="lazy"/>
@@ -795,25 +785,26 @@ function renderPopular(items){
 // ── DONGHUA SECTION ────────────────────────────────────────────────────────
 async function loadDonghuaSection(){
   try{
-    const d=await cachedApiGet(DH_API,{cmd:"home"},"dh_home");
-    const pop=d.popular_series||[];
-    if(pop.length) dhHeroTimer=buildHero("dh-hero-track","dh-hero-dots",pop.slice(0,8),dhHeroTimer,
-      i=>openDetail(encodeURIComponent(slug(i.url))),"DONGHUA");
-    renderGrid3(document.getElementById("dh-latest"),(d.latest_episodes||[]).slice(0,9),"dh");
+    await swrLoad("dh_home",()=>apiGet(DH_API,{cmd:"home"}),(d)=>{
+      const pop=d.popular_series||[];
+      if(pop.length) dhHeroTimer=buildHero("dh-hero-track","dh-hero-dots",pop.slice(0,8),dhHeroTimer,
+        i=>openDetail(encodeURIComponent(slug(i.url))),"DONGHUA");
+      renderGrid3(document.getElementById("dh-latest"),(d.latest_episodes||[]).slice(0,9),"dh");
+    });
   }catch{}
   loadDHGrid();
 }
 async function loadDHGrid(){
   const el=document.getElementById("dh-grid");
   const cacheKey=`dh_grid_${dhMode}_p${dhPage}`;
-  const cached=cacheGet(cacheKey);
-  if(!cached) el.innerHTML=`<div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div>`;
+  if(!cacheGetRaw(cacheKey)) el.innerHTML=`<div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div>`;
   try{
-    const d=await cachedApiGet(DH_API,{cmd:dhMode==="new"?"new-series":"completed",page:dhPage},cacheKey);
-    if(!d.result||!d.result.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada data</div>`;return}
-    el.innerHTML=d.result.map(i=>gcHTML(i,"dh")).join("");
-    document.getElementById("dpage-prev").disabled=dhPage<=1;
-    document.getElementById("dpage-next").disabled=!d.has_next;
+    await swrLoad(cacheKey,()=>apiGet(DH_API,{cmd:dhMode==="new"?"new-series":"completed",page:dhPage}),(d)=>{
+      if(!d.result||!d.result.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada data</div>`;return}
+      el.innerHTML=d.result.map(i=>gcHTML(i,"dh")).join("");
+      document.getElementById("dpage-prev").disabled=dhPage<=1;
+      document.getElementById("dpage-next").disabled=!d.has_next;
+    });
   }catch(e){el.innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal: ${e.message}</div>`}
 }
 function switchDonghua(mode){
@@ -824,16 +815,18 @@ function switchDonghua(mode){
 }
 function changeDPage(dir){dhPage=Math.max(1,dhPage+dir);loadDHGrid();window.scrollTo({top:0,behavior:"smooth"})}
 
-// ── ANIME SECTION — OtakuDesu (Browse Source) ───────────────────────────────
+// ── ANIME SECTION — Nimegami (Browse Source) ─────────────────────────────────
 async function loadAnimeSection(){
   // Hero & Latest
   try{
-    const res=await cachedApiGet(OD_API,{cmd:"home"},"od_home");
-    const items=nnNorm((res.data&&res.data.items)||[]);
-    if(!items.length) throw new Error("empty");
-    anHeroTimer=buildHero("an-hero-track","an-hero-dots",items.slice(0,8),anHeroTimer,
-      i=>openODDetail(encodeURIComponent(odSlug(i.url)),encodeURIComponent(i.thumbnail||"")),"OTAKUDESU");
-    renderGrid3(document.getElementById("an-latest"),items.slice(0,9),"od");
+    await swrLoad("ng_home",()=>apiGet(NG_API,{cmd:"home"}),(res)=>{
+      const items=ngNorm((res.data&&res.data.items)||[]);
+      if(items.length){
+        anHeroTimer=buildHero("an-hero-track","an-hero-dots",items.slice(0,8),anHeroTimer,
+          i=>openNGDetail(encodeURIComponent(ngSlug(i.url)),encodeURIComponent(i.thumbnail||"")),"NIMEGAMI");
+        renderGrid3(document.getElementById("an-latest"),items.slice(0,9),"ng");
+      }
+    });
   }catch{
     document.getElementById("an-latest").innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal memuat</div>`;
   }
@@ -842,25 +835,17 @@ async function loadAnimeSection(){
 
 async function loadAnGrid(){
   const el=document.getElementById("an-grid");
-  const cacheKey=`od_grid_${anMode}_p${anPage}`;
-  const cached=cacheGet(cacheKey);
-  if(!cached) el.innerHTML=`<div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div>`;
+  const cacheKey=`ng_grid_p${anPage}`;
+  if(!cacheGetRaw(cacheKey)) el.innerHTML=`<div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div>`;
   try{
-    const res=await cachedApiGet(OD_API,{cmd:anMode,page:anPage},cacheKey);
-    const items=nnNorm((res.data&&res.data.items)||[]);
-    if(!items.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada data</div>`;return}
-    el.innerHTML=items.map(i=>gcHTML(i,"od")).join("");
-    document.getElementById("apage-prev").disabled=anPage<=1;
-    document.getElementById("apage-next").disabled=!(res.data&&res.data.pagination&&res.data.pagination.hasNext);
+    await swrLoad(cacheKey,()=>apiGet(NG_API,{cmd:"home",page:anPage}),(res)=>{
+      const items=ngNorm((res.data&&res.data.items)||[]);
+      if(!items.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">Tidak ada data</div>`;return}
+      el.innerHTML=items.map(i=>gcHTML(i,"ng")).join("");
+      document.getElementById("apage-prev").disabled=anPage<=1;
+      document.getElementById("apage-next").disabled=!(res.data&&res.data.next);
+    });
   }catch(e){el.innerHTML=`<div class="empty" style="grid-column:1/-1">⚠️ Gagal: ${e.message}</div>`}
-}
-
-function switchAnime(mode){
-  anMode=mode; anPage=1;
-  ["ongoing","complete"].forEach(m=>{
-    document.getElementById(`atab-${m}`).classList.toggle("active",m===mode);
-  });
-  loadAnGrid();
 }
 function changeAPage(dir){anPage=Math.max(1,anPage+dir);loadAnGrid();window.scrollTo({top:0,behavior:"smooth"})}
 
@@ -881,14 +866,14 @@ async function doSearch(){
       if(!d.result||!d.result.length){el.innerHTML=`<div class="empty"><div class="empty-ico">🔍</div>Tidak ada hasil</div>`;return}
       el.innerHTML=`<div class="grid3" style="padding-top:8px">${d.result.map(i=>gcHTML(i,"dh")).join("")}</div>`;
     } else {
-      // OtakuDesu dulu (primary)
-      let odItems=[];
+      // Nimegami dulu (primary)
+      let ngItems=[];
       try{
-        const d=await apiGet(OD_API,{cmd:"search",query:q});
-        odItems=nnNorm((d.data&&d.data.items)||[]);
+        const d=await apiGet(NG_API,{cmd:"search",query:q});
+        ngItems=ngNorm((d.data&&d.data.items)||[]);
       }catch{}
-      if(odItems.length){
-        el.innerHTML=`<div class="grid3" style="padding-top:8px">${odItems.map(i=>gcHTML(i,"od")).join("")}</div>`;
+      if(ngItems.length){
+        el.innerHTML=`<div class="grid3" style="padding-top:8px">${ngItems.map(i=>gcHTML(i,"ng")).join("")}</div>`;
       } else {
         // Fallback Neonime
         const d=await apiGet(NN_API,{cmd:"search",query:q});
@@ -900,37 +885,47 @@ async function doSearch(){
   }catch{el.innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div>Gagal mencari</div>`}
 }
 
-// ── SCHEDULE (Donghua + OtakuDesu digabung) ─────────────────────────────────
+// ── SCHEDULE (Donghua + Nimegami digabung) ───────────────────────────────────
 const DAY_ORDER=["Senin","Selasa","Rabu","Kamis","Jumat","Sabtu","Minggu"];
+const DAY_CAP={senin:"Senin",selasa:"Selasa",rabu:"Rabu",kamis:"Kamis",jumat:"Jumat",sabtu:"Sabtu",minggu:"Minggu"};
 
-async function loadSchedule(){
-  scheduleLoaded=true;
-  const cachedDH=cacheGet("dh_schedule"), cachedAN=cacheGet("od_schedule");
-  if(!(cachedDH&&cachedDH.fresh)||!(cachedAN&&cachedAN.fresh)){
-    document.getElementById("sch-body").innerHTML=`<div class="loader"><div class="spinner"></div><div class="ldr-txt">Memuat jadwal...</div></div>`;
-  }
-  const [dhRes,odRes]=await Promise.allSettled([
-    cachedApiGet(DH_API,{cmd:"schedule"},"dh_schedule"),
-    cachedApiGet(OD_API,{cmd:"jadwal"},"od_schedule")
-  ]);
-  scheduleDataDH = dhRes.status==="fulfilled" ? (dhRes.value.result||{}) : {};
-  scheduleDataAN = odRes.status==="fulfilled" ? ((odRes.value.data&&odRes.value.data.schedule)||{}) : {};
-
+function rebuildScheduleUI(){
   const dayKeys=new Set([...Object.keys(scheduleDataDH),...Object.keys(scheduleDataAN)]);
   const days=DAY_ORDER.filter(d=>dayKeys.has(d));
-  // tambahkan hari yang gak ada di DAY_ORDER (jaga-jaga beda penamaan)
   dayKeys.forEach(d=>{if(!days.includes(d))days.push(d)});
-
   if(!days.length){
     document.getElementById("sch-body").innerHTML=`<div class="empty">Tidak ada jadwal</div>`;
     return;
   }
   const todayMap=["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
   const todayName=todayMap[new Date().getDay()];
-  currentDay=days.includes(todayName)?todayName:days[0];
+  if(!currentDay||!days.includes(currentDay)) currentDay=days.includes(todayName)?todayName:days[0];
   document.getElementById("day-tabs").innerHTML=days.map(day=>
     `<button class="day-tab${day===currentDay?' active':''}" onclick="switchDay('${day}')">${day}</button>`).join("");
   renderSchDay(currentDay);
+}
+
+async function loadSchedule(){
+  scheduleLoaded=true;
+  if(!cacheGetRaw("dh_schedule")&&!cacheGetRaw("ng_schedule")){
+    document.getElementById("sch-body").innerHTML=`<div class="loader"><div class="spinner"></div><div class="ldr-txt">Memuat jadwal...</div></div>`;
+  }
+  await Promise.allSettled([
+    swrLoad("dh_schedule",()=>apiGet(DH_API,{cmd:"schedule"}),(d)=>{
+      scheduleDataDH=d.result||{};
+      rebuildScheduleUI();
+    }),
+    swrLoad("ng_schedule",()=>apiGet(NG_API,{cmd:"ongoing"}),(res)=>{
+      const raw=(res.data&&res.data.schedule)||{};
+      const capped={};
+      Object.keys(raw).forEach(k=>{capped[DAY_CAP[k]||k]=raw[k]});
+      scheduleDataAN=capped;
+      rebuildScheduleUI();
+    })
+  ]);
+  if(!Object.keys(scheduleDataDH).length&&!Object.keys(scheduleDataAN).length){
+    document.getElementById("sch-body").innerHTML=`<div class="empty">⚠️ Gagal memuat jadwal</div>`;
+  }
 }
 function switchDay(day){
   currentDay=day;
@@ -951,7 +946,7 @@ function renderSchDay(day){
     html+=`<div class="sh" style="padding-top:14px"><span class="sh-title"><span class="dot"></span>Anime</span></div>
       <div class="ep-list" style="padding:0 18px 18px">
         ${anItems.map(i=>`
-          <div class="ep-row" onclick="openODDetail('${encodeURIComponent(odSlug(i.link||i.url||""))}','')">
+          <div class="ep-row" onclick="openNGDetail('${encodeURIComponent(ngSlug(i.link||i.url||""))}','')">
             <span class="ep-row-title">${i.title||""}</span>
             <span class="ep-row-arr">›</span>
           </div>`).join("")}
@@ -1066,7 +1061,8 @@ async function openNNDetail(encodedSlug){
 }
 
 // ── OTAKUDESU DETAIL (Search/Browse Primary) ────────────────────────────────
-async function openODDetail(encodedSlug,encodedThumb){
+// ── NIMEGAMI DETAIL (Search/Browse Primary) ─────────────────────────────────
+async function openNGDetail(encodedSlug,encodedThumb){
   const s=decodeURIComponent(encodedSlug);
   const thumb=encodedThumb?decodeURIComponent(encodedThumb):"";
   const page=document.getElementById("detail-page");
@@ -1075,42 +1071,52 @@ async function openODDetail(encodedSlug,encodedThumb){
   body.innerHTML=`<div class="loader" style="padding:70px"><div class="spinner"></div><div class="ldr-txt">Memuat anime...</div></div>`;
   page.classList.add("open");document.body.style.overflow="hidden";
   try{
-    const res=await apiGet(OD_API,{cmd:"detail",slug:s});
-    const d=res.data;
+    // Detail (metadata) + episode (semua streaming/download dalam 1 halaman) di-fetch bareng,
+    // hasil episode di-cache di memory biar klik episode gak nembak API lagi.
+    const [detRes,epRes]=await Promise.all([
+      apiGet(NG_API,{cmd:"detail",slug:s}),
+      apiGet(NG_API,{cmd:"episode",slug:s})
+    ]);
+    const d=detRes.data;
     if(!d||!d.title){body.innerHTML=`<div class="empty"><div class="empty-ico">😞</div>Tidak ditemukan</div>`;return}
+    const epData=epRes.data||{streaming:[],downloads:[]};
+    const streaming=ngSortByEp(epData.streaming);
+    const downloads=ngSortByEp(epData.downloads);
+    ngEpCache[s]={title:d.title,poster:d.poster||thumb,streaming,downloads};
+
     document.getElementById("dp-back-title").textContent=d.title;
-    const eps=d.episodes||[];
-    const info=d.info||{};
-    const genres=info.Genre?info.Genre.split(',').map(g=>g.trim()).filter(Boolean):[];
-    const poster=thumb; // OtakuDesu detail tidak punya poster, pakai thumbnail dari list/search
+    const poster=d.poster||thumb;
+    const banner=d.cover||poster;
+    const categories=d.categories||[];
     body.innerHTML=`
-      ${poster?`<div class="dp-banner"><img class="dp-banner-img" src="${IMG(poster)}" onerror="this.style.display='none'"/></div>`:""}
-      <div class="dp-content"${poster?'':' style="padding-top:20px"'}>
-        <div class="dp-row"${poster?'':' style="margin-top:0"'}>
+      ${banner?`<div class="dp-banner"><img class="dp-banner-img" src="${IMG(banner)}" onerror="this.style.display='none'"/></div>`:""}
+      <div class="dp-content"${banner?'':' style="padding-top:20px"'}>
+        <div class="dp-row"${banner?'':' style="margin-top:0"'}>
           <img class="dp-poster" src="${IMG(poster)}" onerror="this.style.background='var(--card2)'"/>
-          <div class="dp-meta"${poster?'':' style="padding-top:0"'}>
+          <div class="dp-meta"${banner?'':' style="padding-top:0"'}>
             <div class="dp-title">${d.title}</div>
             <div class="dp-tags">
               <span class="dp-tag" style="background:rgba(255,107,107,.12);color:#ff8e8e;border-color:rgba(255,107,107,.3)">Anime</span>
-              ${info.Status?`<span class="dp-tag">${info.Status}</span>`:""}
-              ${info.Tipe?`<span class="dp-tag">${info.Tipe}</span>`:""}
+              ${d.status?`<span class="dp-tag">${d.status}</span>`:""}
+              ${d.type?`<span class="dp-tag">${d.type}</span>`:""}
             </div>
             <div class="dp-stats">
-              ${d.score||info.Score?`<div class="dp-stat">⭐ <strong>${d.score||info.Score}</strong></div>`:""}
-              ${info["Total Episode"]?`<div class="dp-stat">🎬 <strong>${info["Total Episode"]}</strong></div>`:""}
-              ${info.Durasi?`<div class="dp-stat">⏱ <strong>${info.Durasi}</strong></div>`:""}
-              ${info["Tanggal Rilis"]?`<div class="dp-stat">📅 <strong>${info["Tanggal Rilis"]}</strong></div>`:""}
+              ${d.rating?`<div class="dp-stat">⭐ <strong>${d.rating}</strong></div>`:""}
+              ${streaming.length?`<div class="dp-stat">🎬 <strong>${streaming.length} Ep</strong></div>`:""}
+              ${d.duration?`<div class="dp-stat">⏱ <strong>${d.duration}</strong></div>`:""}
+              ${d.season?`<div class="dp-stat">📅 <strong>${d.season}</strong></div>`:""}
             </div>
           </div>
         </div>
-        ${genres.length?`<div class="dp-tags" style="margin-bottom:14px">${genres.map(g=>`<span class="dp-tag">${g}</span>`).join('')}</div>`:''}
-        ${info.Studio?`<div style="font-size:12px;color:var(--muted);margin-bottom:10px">🏢 Studio: <span style="color:var(--text2)">${info.Studio}</span></div>`:""}
-        <div class="ep-list-hd">Daftar Episode <span>(${eps.length})</span></div>
+        ${categories.length?`<div class="dp-tags" style="margin-bottom:14px">${categories.map(g=>`<span class="dp-tag">${g}</span>`).join('')}</div>`:''}
+        ${d.studio?`<div style="font-size:12px;color:var(--muted);margin-bottom:10px">🏢 Studio: <span style="color:var(--text2)">${d.studio}</span></div>`:""}
+        ${d.synopsis?`<div class="dp-synopsis">${d.synopsis.substring(0,420)}${d.synopsis.length>420?'...':''}</div>`:""}
+        <div class="ep-list-hd">Daftar Episode <span>(${streaming.length})</span></div>
         <div class="ep-list">
-          ${eps.map(e=>`
-            <div class="ep-row" onclick="openODWatch('${encodeURIComponent(e.url)}','${encodeURIComponent(d.title)}','${encodeURIComponent(poster)}')">
+          ${streaming.map(e=>`
+            <div class="ep-row" onclick="openNGWatch('${encodeURIComponent(s)}',${e.episode},'${encodeURIComponent(d.title)}','${encodeURIComponent(poster)}')">
+              <span class="ep-row-num">Ep ${e.episode}</span>
               <span class="ep-row-title">${e.title||d.title}</span>
-              <span class="ep-row-date">${e.releaseDate||""}</span>
               <span class="ep-row-arr">›</span>
             </div>`).join("")}
         </div>
@@ -1190,61 +1196,76 @@ async function openNNWatch(encodedEpUrl,encodedTitle,encodedPoster){
 }
 
 // ── OTAKUDESU WATCH (dengan Player asli + Download) ─────────────────────────
-async function openODWatch(encodedEpUrl,encodedSeriesTitle,encodedThumb){
-  const epUrl=decodeURIComponent(encodedEpUrl);
+// ── NIMEGAMI WATCH (Direct MP4 + Download) ──────────────────────────────────
+async function openNGWatch(encodedSlug,epNum,encodedSeriesTitle,encodedThumb){
+  const s=decodeURIComponent(encodedSlug);
   const title=encodedSeriesTitle?decodeURIComponent(encodedSeriesTitle):"";
   const thumb=encodedThumb?decodeURIComponent(encodedThumb):"";
   resetWatchUI(title);
   document.getElementById("watch-page").classList.add("open");
 
-  const parsed=parseODEp(epUrl);
-  if(!parsed){
-    document.getElementById("srv-list").innerHTML=`<div style="color:var(--muted);font-size:12.5px">⚠️ URL episode tidak valid</div>`;
-    return;
-  }
   try{
-    const res=await apiGet(OD_API,{cmd:"episode",slug:parsed.slug,ep:parsed.ep});
-    const d=res.data;
-    if(!d){throw new Error("Data kosong")}
-    document.getElementById("wp-ep-title").textContent=d.title||`Episode ${parsed.ep}`;
-
-    // Kumpulkan semua server (default player + embedPlayers per kualitas)
-    const allServers=[];
-    if(d.defaultPlayer&&/^https?:\/\//i.test(d.defaultPlayer)){
-      allServers.push({label:"Default",url:d.defaultPlayer});
+    // Pakai cache kalau ada (dari openNGDetail), kalau gak ada (misal dari history) fetch baru
+    let cached=ngEpCache[s];
+    if(!cached){
+      const epRes=await apiGet(NG_API,{cmd:"episode",slug:s});
+      const epData=epRes.data||{streaming:[],downloads:[]};
+      cached={title,poster:thumb,streaming:ngSortByEp(epData.streaming),downloads:ngSortByEp(epData.downloads)};
+      ngEpCache[s]=cached;
     }
-    (d.embedPlayers||[]).forEach(grp=>{
-      (grp.servers||[]).forEach(sv=>{
-        if(sv.embedUrl&&/^https?:\/\//i.test(sv.embedUrl)){
-          allServers.push({label:`${grp.quality} • ${sv.server}`,url:sv.embedUrl});
-        }
-      });
-    });
+    const ep=cached.streaming.find(e=>e.episode===epNum);
+    if(!ep){
+      document.getElementById("srv-list").innerHTML=`<div style="color:var(--muted);font-size:12.5px">⚠️ Episode tidak ditemukan</div>`;
+      return;
+    }
+    document.getElementById("wp-ep-title").textContent=ep.title||`Episode ${epNum}`;
 
-    if(allServers.length){
-      document.getElementById("player-frame").src=allServers[0].url;
-      document.getElementById("srv-list").innerHTML=allServers.map((sv,i)=>
-        `<button class="srv-btn${i===0?' active':''}" onclick="switchSrv(this,'${encodeURIComponent(sv.url)}')">${sv.label}</button>`
+    // Native <video> player — Nimegami kasih direct MP4 URL per kualitas
+    const formats=ep.formats||{};
+    const qualities=Object.keys(formats); // contoh: 360p, 480p, 720p, 1080p
+    const preferOrder=["720p","480p","1080p","360p"];
+    const defaultQ=preferOrder.find(q=>formats[q])||qualities[0];
+    const videoEl=document.getElementById("player-video");
+    const iframeEl=document.getElementById("player-frame");
+    iframeEl.style.display="none"; iframeEl.src="";
+    videoEl.style.display="block";
+
+    if(defaultQ&&formats[defaultQ]){
+      videoEl.src=formats[defaultQ];
+      document.getElementById("srv-list").innerHTML=qualities.map(q=>
+        `<button class="srv-btn${q===defaultQ?' active':''}" onclick="switchVideoQuality(this,'${encodeURIComponent(formats[q])}')">${q}</button>`
       ).join("");
-    } else {
+    }else{
       document.getElementById("srv-list").innerHTML=`<div style="color:var(--muted);font-size:12.5px;padding:6px 0">⚠️ Tidak ada stream tersedia</div>`;
     }
 
-    // Download links (format OtakuDesu: [{quality, servers:[{server,url}]}])
-    renderODDownloads(d.downloadLinks||[]);
+    // Download (format Nimegami: resolutions:{quality:{provider:url}})
+    const dl=cached.downloads.find(e=>e.episode===epNum);
+    renderNGDownloads(dl?dl.resolutions:null);
 
-    // Nav & state
-    watchData={type:"od",slug:parsed.slug,currentEp:parsed.ep,seriesTitle:title,
-      next_episode:d.nextEpisode||null,prev_episode:d.prevEpisode||null};
-    document.getElementById("btn-prev-ep").disabled=!d.prevEpisode;
-    document.getElementById("btn-next-ep").disabled=!d.nextEpisode;
+    // Nav antar-episode pakai data yang udah ke-cache (gak nembak API lagi)
+    const idx=cached.streaming.findIndex(e=>e.episode===epNum);
+    const prevEp=idx>0?cached.streaming[idx-1].episode:null;
+    const nextEp=idx>=0&&idx<cached.streaming.length-1?cached.streaming[idx+1].episode:null;
+    watchData={type:"ng",slug:s,currentEp:epNum,seriesTitle:title,next_episode:nextEp,prev_episode:prevEp};
+    document.getElementById("btn-prev-ep").disabled=!prevEp;
+    document.getElementById("btn-next-ep").disabled=!nextEp;
 
-    const finalThumb=d.poster||thumb;
-    addHist(epUrl,d.title||`Episode ${parsed.ep}`,title,finalThumb,"od");
+    addHist(`${s}::${epNum}`,ep.title||`Episode ${epNum}`,title,cached.poster||thumb,"ng");
   }catch(e){
     document.getElementById("srv-list").innerHTML=`<div style="color:var(--muted);font-size:12.5px">⚠️ Gagal memuat player</div>`;
     document.getElementById("wp-ep-title").textContent="Gagal memuat";
   }
+}
+function switchVideoQuality(btn,encodedUrl){
+  document.querySelectorAll(".srv-btn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  const videoEl=document.getElementById("player-video");
+  const wasPlaying=!videoEl.paused;
+  const t=videoEl.currentTime;
+  videoEl.src=decodeURIComponent(encodedUrl);
+  videoEl.currentTime=t||0;
+  if(wasPlaying) videoEl.play().catch(()=>{});
 }
 
 // ── DOWNLOAD RENDERER (Neonime: format/quality/links) ───────────────────────
@@ -1273,23 +1294,21 @@ function renderDownloads(downloadLinks){
   content.innerHTML=html;
 }
 
-// ── DOWNLOAD RENDERER (OtakuDesu: quality/servers) ──────────────────────────
-function renderODDownloads(downloadLinks){
+// ── DOWNLOAD RENDERER (Nimegami: resolutions:{quality:{provider:url}}) ──────
+function renderNGDownloads(resolutions){
   const sec=document.getElementById("dl-section");
   const content=document.getElementById("dl-content");
-  if(!downloadLinks||!downloadLinks.length){sec.style.display="none";return}
-  const valid=downloadLinks.filter(d=>(d.servers||[]).some(s=>s.url));
-  if(!valid.length){sec.style.display="none";return}
+  if(!resolutions||!Object.keys(resolutions).length){sec.style.display="none";return}
   sec.style.display="block";
   let html=`<div class="dl-format-block"><div class="dl-fmt-tag mp4">DOWNLOAD</div>`;
-  valid.forEach(d=>{
-    const servers=(d.servers||[]).filter(s=>s.url);
-    if(!servers.length)return;
-    html+=`<div class="dl-quality-item"><div class="dl-quality-name">${d.quality||""}</div>
-      <div class="dl-links-wrap">${servers.map(s=>
-        `<a class="dl-link-a" href="${s.url}" target="_blank" rel="noopener">⬇ ${s.server||"Download"}</a>`
+  for(const[quality,providers] of Object.entries(resolutions)){
+    const entries=Object.entries(providers||{}).filter(([,url])=>url);
+    if(!entries.length)continue;
+    html+=`<div class="dl-quality-item"><div class="dl-quality-name">${quality}</div>
+      <div class="dl-links-wrap">${entries.map(([name,url])=>
+        `<a class="dl-link-a" href="${url}" target="_blank" rel="noopener">⬇ ${name}</a>`
       ).join("")}</div></div>`;
-  });
+  }
   html+=`</div>`;
   content.innerHTML=html;
 }
@@ -1299,7 +1318,10 @@ function resetWatchUI(title){
   document.getElementById("wp-back-title").textContent=title||"";
   document.getElementById("wp-ep-title").textContent="Memuat...";
   document.getElementById("wp-series-title").textContent=title||"";
-  document.getElementById("player-frame").src="";
+  const iframeEl=document.getElementById("player-frame");
+  const videoEl=document.getElementById("player-video");
+  iframeEl.src=""; iframeEl.style.display="block";
+  videoEl.pause(); videoEl.removeAttribute("src"); videoEl.load(); videoEl.style.display="none";
   document.getElementById("srv-list").innerHTML=`<div class="loader" style="width:100%"><div class="spinner"></div></div>`;
   document.getElementById("btn-prev-ep").disabled=true;
   document.getElementById("btn-next-ep").disabled=true;
@@ -1313,12 +1335,16 @@ function switchSrv(btn,encodedUrl){
 }
 function navEp(dir){
   if(!watchData)return;
+  if(watchData.type==="ng"){
+    const targetEp=dir==="next"?watchData.next_episode:watchData.prev_episode;
+    if(!targetEp)return;
+    openNGWatch(encodeURIComponent(watchData.slug),targetEp,encodeURIComponent(watchData.seriesTitle||""),"");
+    return;
+  }
   const url=dir==="next"?watchData.next_episode:watchData.prev_episode;
   if(!url)return;
   if(watchData.type==="neonime"){
     openNNWatch(encodeURIComponent(url),encodeURIComponent(watchData.seriesTitle||""),"");
-  } else if(watchData.type==="od"){
-    openODWatch(encodeURIComponent(url),encodeURIComponent(watchData.seriesTitle||""),"");
   } else {
     openWatch(encodeURIComponent(slug(url)));
   }
@@ -1326,6 +1352,8 @@ function navEp(dir){
 function closeWatch(){
   document.getElementById("watch-page").classList.remove("open");
   document.getElementById("player-frame").src="";
+  const videoEl=document.getElementById("player-video");
+  videoEl.pause(); videoEl.removeAttribute("src"); videoEl.load();
   document.getElementById("dl-section").style.display="none";
   watchData=null;renderCW();
 }
